@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFMEA Generator Helper</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --border: #cbd5e1;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: #334155;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        h1, h2, h3 { color: #0f172a; margin-top: 0; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+        }
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+            margin-bottom: -2px;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Form Controls */
+        input[type="text"], select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .input-group { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .input-stacked { flex-direction: column; align-items: flex-start; margin-bottom: 20px; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 6px; }
+        .input-stacked label { font-weight: 600; margin-bottom: 8px; color: #0f172a; }
+        .input-stacked input { width: 100%; max-width: 600px; box-sizing: border-box; }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: #16a34a; }
+        .btn-success:hover { background-color: #15803d; }
+        .btn-danger { background-color: #ef4444; padding: 4px 8px; font-size: 12px; }
+        .btn-warning { background-color: #f59e0b; color: white; }
+        .btn-warning:hover { background-color: #d97706; }
+        .btn-info { background-color: #0ea5e9; color: white; }
+        .btn-info:hover { background-color: #0284c7; }
+        .btn-save-large { width: 100%; max-width: 630px; padding: 12px; font-size: 16px; margin-top: 10px; }
+
+        /* Matrix Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+        }
+        th { background-color: #f1f5f9; }
+        .diagonal { background-color: #e2e8f0; }
+        
+        /* Lists */
+        ul { list-style-type: none; padding: 0; }
+        li {
+            background: #f8fafc;
+            margin-bottom: 8px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Preview Table */
+        .table-responsive { overflow-x: auto; }
+        #previewTable th { font-size: 13px; }
+        #previewTable td { font-size: 13px; text-align: left; }
+        
+        .hint { font-size: 13px; color: #64748b; margin-top: -10px; margin-bottom: 15px; display: block; }
+        .section-divider { border-top: 1px dashed var(--border); margin: 30px 0; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>DFMEA Helper</h1>
+    
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab(1)" id="btnTab1">1. Components</button>
+        <button class="tab" onclick="switchTab(2)" id="btnTab2">2. Interfaces Matrix</button>
+        <button class="tab" onclick="switchTab(3)" id="btnTab3">3. Features</button>
+        <button class="tab" onclick="switchTab(4)" id="btnTab4">4. Dimensions</button>
+        <button class="tab" onclick="switchTab(5)" id="btnTab5">5. Settings</button>
+        <button class="tab" onclick="switchTab(6)" id="btnTab6">6. Generate & Export</button>
+    </div>
+
+    <div id="tab1" class="tab-content active">
+        <h2>Define Components</h2>
+        <span class="hint">Tip: You can enter multiple components separated by commas (e.g., Holder, Base, Screw) and press Enter.</span>
+        <div class="input-group">
+            <input type="text" id="compInput" placeholder="e.g., Phone Holder, Stand" style="width: 300px;" onkeypress="handleEnter(event, addComponent)">
+            <button onclick="addComponent()">Add Component(s)</button>
+        </div>
+        <ul id="compList"></ul>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <h2>Component Interfaces</h2>
+        <p>Uncheck combinations where components do not interact.</p>
+        <div id="matrixContainer" class="table-responsive"></div>
+    </div>
+
+    <div id="tab3" class="tab-content">
+        <h2>Component Features</h2>
+        <span class="hint">Enter a comma-separated list of features for each component, then click save to proceed.</span>
+        
+        <div id="featuresContainer"></div>
+        <button class="btn-success btn-save-large" onclick="saveAllFeatures()" id="btnSaveFeatures" style="display:none;">💾 Save Features & Continue</button>
+    </div>
+
+    <div id="tab4" class="tab-content">
+        <h2>Feature Dimensions</h2>
+        <span class="hint">Enter a comma-separated list of dimensions for each feature, then click save to proceed to Export.</span>
+        
+        <div id="dimensionsContainer"></div>
+        <button class="btn-success btn-save-large" onclick="saveAllDimensions()" id="btnSaveDimensions" style="display:none;">💾 Save Dimensions & Continue</button>
+    </div>
+
+    <div id="tab5" class="tab-content">
+        <h2>Session Management</h2>
+        <p>Save your current progress to a file, or load a previous session to continue working.</p>
+        <div class="input-group">
+            <button class="btn-info" onclick="exportSession()">💾 Save Session (.json)</button>
+            <button class="btn-warning" onclick="document.getElementById('importFile').click()">📂 Load Session (.json)</button>
+            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importSession(event)">
+        </div>
+
+        <div class="section-divider"></div>
+
+        <h2>Dimension Extremes Presets</h2>
+        <span class="hint">Manage your dimension keywords and their failure extremes below. You can add new ones or remove defaults.</span>
+        
+        <div class="input-group">
+            <input type="text" id="presetKeyword" placeholder="Keywords (e.g., length, depth)" style="width: 200px;">
+            <input type="text" id="presetExt1" placeholder="Extreme 1 (e.g., too long)">
+            <input type="text" id="presetExt2" placeholder="Extreme 2 (e.g., too short)">
+            <button onclick="addPreset()">Add Preset</button>
+        </div>
+        
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Keywords (comma separated)</th>
+                        <th>Extreme 1</th>
+                        <th>Extreme 2</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="presetBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab6" class="tab-content">
+        <h2>Final DFMEA Table</h2>
+        <button class="btn-success" onclick="exportExcel()">⬇ Export to Excel (.xlsx)</button>
+        <button onclick="generatePreview()" style="margin-left: 10px;">Refresh Preview</button>
+        
+        <div class="table-responsive" style="margin-top: 20px;">
+            <table id="previewTable">
+                <thead>
+                    <tr>
+                        <th>Component Interface</th>
+                        <th>Failure Mode</th>
+                        <th>Effect of Failure</th>
+                        <th>Potential Causes of Failure</th>
+                        <th>Severity</th>
+                        <th>Occurrence</th>
+                        <th>Detection</th>
+                        <th>RPN</th>
+                    </tr>
+                </thead>
+                <tbody id="previewBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- State Data ---
+    let components = [];
+    let interfaces = {}; 
+    let featuresByComp = {}; 
+    let dimsByFeature = {};  
+    let finalTableData = []; 
+
+    // Default Presets initialized as standard UI state
+    let dimensionPresets = [
+        { keywords: ['radius', 'diameter', 'width', 'size', 'length'], ext1: 'too large', ext2: 'too small' },
+        { keywords: ['height', 'depth'], ext1: 'too high', ext2: 'too low' },
+        { keywords: ['weight', 'force'], ext1: 'too heavy', ext2: 'too light' },
+        { keywords: ['finish', 'roughness'], ext1: 'too rough', ext2: 'too smooth' }
+    ];
+
+    // --- Utility ---
+    function handleEnter(e, func) {
+        if (e.key === 'Enter') {
+            e.preventDefault(); 
+            func();
+        }
+    }
+
+    function switchTab(step) {
+        for (let i = 1; i <= 6; i++) {
+            document.getElementById(`tab${i}`).classList.remove('active');
+            document.getElementById(`btnTab${i}`).classList.remove('active');
+        }
+        document.getElementById(`tab${step}`).classList.add('active');
+        document.getElementById(`btnTab${step}`).classList.add('active');
+
+        if (step === 2) buildMatrix();
+        if (step === 3) renderFeaturesTab();
+        if (step === 4) renderDimensionsTab();
+        if (step === 5) renderPresets();
+        if (step === 6) generatePreview();
+    }
+
+    // --- Data Export / Import (Session Management) ---
+    function exportSession() {
+        const sessionData = {
+            components: components,
+            interfaces: interfaces,
+            featuresByComp: featuresByComp,
+            dimsByFeature: dimsByFeature,
+            dimensionPresets: dimensionPresets
+        };
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessionData));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "dfmea_session.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function importSession(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                components = data.components || [];
+                interfaces = data.interfaces || {};
+                featuresByComp = data.featuresByComp || {};
+                dimsByFeature = data.dimsByFeature || {};
+                dimensionPresets = data.dimensionPresets || dimensionPresets;
+                
+                renderComponents();
+                renderPresets();
+                alert("Session loaded successfully!");
+                document.getElementById('importFile').value = ''; 
+            } catch (err) {
+                alert("Error loading session. Make sure it is a valid JSON file generated by this tool.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- STEP 1: Components ---
+    function addComponent() {
+        const input = document.getElementById('compInput');
+        const vals = input.value.split(',').map(v => v.trim()).filter(v => v);
+        
+        let added = false;
+        vals.forEach(val => {
+            if (!components.includes(val)) {
+                components.push(val);
+                if (!featuresByComp[val]) featuresByComp[val] = [];
+                
+                components.forEach(existing => {
+                    if (existing !== val) {
+                        let pair = getPairKey(existing, val);
+                        if (interfaces[pair] === undefined) interfaces[pair] = true;
+                    }
+                });
+                added = true;
+            }
+        });
+
+        if (added) {
+            input.value = '';
+            renderComponents();
+        }
+    }
+
+    function removeComponent(comp) {
+        components = components.filter(c => c !== comp);
+        delete featuresByComp[comp];
+        
+        for (let key in interfaces) {
+            if (key.split('|').includes(comp)) delete interfaces[key];
+        }
+        for (let key in dimsByFeature) {
+            if (key.startsWith(comp + '|')) delete dimsByFeature[key];
+        }
+        renderComponents();
+    }
+
+    function renderComponents() {
+        const list = document.getElementById('compList');
+        list.innerHTML = '';
+        components.forEach(c => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${c}</span> <button class="btn-danger" onclick="removeComponent('${c}')">Remove</button>`;
+            list.appendChild(li);
+        });
+    }
+
+    // --- STEP 2: Matrix ---
+    function getPairKey(c1, c2) {
+        return [c1, c2].sort().join('|');
+    }
+
+    function buildMatrix() {
+        const container = document.getElementById('matrixContainer');
+        if (components.length < 2) {
+            container.innerHTML = '<p><em>Please add at least 2 components in Step 1 to generate an interface matrix.</em></p>';
+            return;
+        }
+
+        let html = '<table><thead><tr><th></th>';
+        components.forEach(c => html += `<th>${c}</th>`);
+        html += '</tr></thead><tbody>';
+
+        for (let i = 0; i < components.length; i++) {
+            let c1 = components[i];
+            html += `<tr><th>${c1}</th>`;
+            for (let j = 0; j < components.length; j++) {
+                let c2 = components[j];
+                if (i === j) {
+                    html += '<td class="diagonal">N/A</td>';
+                } else {
+                    let pair = getPairKey(c1, c2);
+                    let checked = interfaces[pair] ? 'checked' : '';
+                    html += `<td><input type="checkbox" id="chk_${i}_${j}" ${checked} 
+                             onchange="syncCheckbox(${i}, ${j}, '${pair}')"></td>`;
+                }
+            }
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function syncCheckbox(i, j, pairKey) {
+        const isChecked = document.getElementById(`chk_${i}_${j}`).checked;
+        document.getElementById(`chk_${j}_${i}`).checked = isChecked;
+        interfaces[pairKey] = isChecked;
+    }
+
+    // --- STEP 3: Features ---
+    function renderFeaturesTab() {
+        const container = document.getElementById('featuresContainer');
+        const btnSave = document.getElementById('btnSaveFeatures');
+        
+        if (components.length === 0) {
+            container.innerHTML = '<p><em>Please add components in Tab 1 first.</em></p>';
+            btnSave.style.display = 'none';
+            return;
+        }
+
+        let html = '';
+        components.forEach((comp, idx) => {
+            let existingFeats = (featuresByComp[comp] || []).join(', ');
+            html += `
+            <div class="input-group input-stacked">
+                <label>${comp}</label>
+                <input type="text" id="input_feat_${idx}" value="${existingFeats}" placeholder="e.g. holder ribs, inner hole, surface">
+            </div>`;
+        });
+        
+        container.innerHTML = html;
+        btnSave.style.display = 'block';
+    }
+
+    function saveAllFeatures() {
+        components.forEach((comp, idx) => {
+            let inputVal = document.getElementById(`input_feat_${idx}`).value;
+            let feats = inputVal.split(',').map(f => f.trim()).filter(f => f);
+            featuresByComp[comp] = feats;
+        });
+
+        Object.keys(dimsByFeature).forEach(key => {
+            let [comp, feat] = key.split('|');
+            if (!featuresByComp[comp] || !featuresByComp[comp].includes(feat)) {
+                delete dimsByFeature[key];
+            }
+        });
+
+        // Automatically move to Tab 4 without alerting
+        switchTab(4);
+    }
+
+    // --- STEP 4: Dimensions ---
+    function renderDimensionsTab() {
+        const container = document.getElementById('dimensionsContainer');
+        const btnSave = document.getElementById('btnSaveDimensions');
+        
+        let html = '';
+        let hasFeatures = false;
+
+        components.forEach((comp) => {
+            let feats = featuresByComp[comp] || [];
+            if (feats.length > 0) {
+                hasFeatures = true;
+                html += `<h3>${comp}</h3>`;
+                feats.forEach((feat) => {
+                    let key = `${comp}|${feat}`;
+                    let existingDims = (dimsByFeature[key] || []).join(', ');
+                    html += `
+                    <div class="input-group input-stacked" style="margin-left: 20px;">
+                        <label>${feat}</label>
+                        <input type="text" class="dim-input" data-key="${key}" value="${existingDims}" placeholder="e.g. height, width, radius">
+                    </div>`;
+                });
+            }
+        });
+
+        if (!hasFeatures) {
+            container.innerHTML = '<p><em>No features found. Please enter and save features in Tab 3 first.</em></p>';
+            btnSave.style.display = 'none';
+        } else {
+            container.innerHTML = html;
+            btnSave.style.display = 'block';
+        }
+    }
+
+    function saveAllDimensions() {
+        let inputs = document.querySelectorAll('.dim-input');
+        inputs.forEach(input => {
+            let key = input.getAttribute('data-key');
+            let dims = input.value.split(',').map(d => d.trim()).filter(d => d);
+            dimsByFeature[key] = dims;
+        });
+
+        // Automatically move to Tab 6 without alerting
+        switchTab(6);
+    }
+
+    // --- STEP 5: Settings / Presets ---
+    function renderPresets() {
+        const tbody = document.getElementById('presetBody');
+        tbody.innerHTML = '';
+        
+        dimensionPresets.forEach((preset, idx) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${preset.keywords.join(', ')}</td>
+                <td>${preset.ext1}</td>
+                <td>${preset.ext2}</td>
+                <td><button class="btn-danger" onclick="removePreset(${idx})">Remove</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    function addPreset() {
+        const kwInput = document.getElementById('presetKeyword').value.trim();
+        const ext1 = document.getElementById('presetExt1').value.trim();
+        const ext2 = document.getElementById('presetExt2').value.trim();
+        
+        if (!kwInput || !ext1 || !ext2) {
+            alert("Please fill all fields for the preset.");
+            return;
+        }
+        
+        const keywords = kwInput.split(',').map(k => k.trim().toLowerCase()).filter(k => k);
+        dimensionPresets.push({ keywords, ext1, ext2 });
+        
+        document.getElementById('presetKeyword').value = '';
+        document.getElementById('presetExt1').value = '';
+        document.getElementById('presetExt2').value = '';
+        
+        renderPresets();
+    }
+    
+    function removePreset(index) {
+        dimensionPresets.splice(index, 1);
+        renderPresets();
+    }
+
+    function getExtremes(dimension) {
+        let d = dimension.toLowerCase();
+        for (let preset of dimensionPresets) {
+            if (preset.keywords.some(kw => d.includes(kw))) {
+                return [preset.ext1, preset.ext2];
+            }
+        }
+        return ['too high/large', 'too low/small']; 
+    }
+
+    // --- STEP 6: Generate ---
+    function generateData() {
+        finalTableData = [];
+        finalTableData.push([
+            "Component Interface", 
+            "Failure Mode", 
+            "Effect of Failure", 
+            "Potential Causes of Failure", 
+            "Severity", 
+            "Occurrence", 
+            "Detection", 
+            "RPN"
+        ]);
+
+        // Iterate directionally: For every Comp 1, check every Comp 2
+        // This sorts the list so all Comp 1 interactions appear consecutively
+        components.forEach(c1 => {
+            components.forEach(c2 => {
+                if (c1 === c2) return; // N/A on self
+
+                let pairKey = getPairKey(c1, c2);
+                
+                // If this interface is checked active in the matrix
+                if (interfaces[pairKey]) {
+                    let interfaceStr = `${c1} - ${c2}`;
+                    let causesFound = false;
+                    let feats = featuresByComp[c1] || [];
+                    
+                    feats.forEach(feat => {
+                        let dims = dimsByFeature[`${c1}|${feat}`] || [];
+                        dims.forEach(dim => {
+                            let extremes = getExtremes(dim);
+                            extremes.forEach(ext => {
+                                let causeString = `${c1} ${feat} ${dim} ${ext}`;
+                                finalTableData.push([interfaceStr, "", "", causeString, "", "", "", ""]);
+                                causesFound = true;
+                            });
+                        });
+                    });
+
+                    // If C1 has no mapped features/dimensions yet, print a blank row so the interface isn't lost
+                    if (!causesFound) {
+                        finalTableData.push([interfaceStr, "", "", "", "", "", "", ""]);
+                    }
+                }
+            });
+        });
+    }
+
+    function generatePreview() {
+        generateData();
+        const tbody = document.getElementById('previewBody');
+        tbody.innerHTML = '';
+
+        if (finalTableData.length <= 1) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No active interfaces or components found. Go back and map them out!</td></tr>';
+            return;
+        }
+
+        for (let i = 1; i < finalTableData.length; i++) {
+            let row = finalTableData[i];
+            let tr = document.createElement('tr');
+            row.forEach((cell, index) => {
+                let td = document.createElement('td');
+                if (index === 0) td.innerHTML = `<strong>${cell}</strong>`;
+                else td.textContent = cell;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        }
+    }
+
+    // --- Export ---
+    function exportExcel() {
+        generateData();
+        if (finalTableData.length <= 1) {
+            alert("Table is empty. Please define components, interfaces, features, and dimensions first.");
+            return;
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(finalTableData);
+        const wscols = [ {wch:25}, {wch:15}, {wch:15}, {wch:40}, {wch:10}, {wch:10}, {wch:10}, {wch:10} ];
+        ws['!cols'] = wscols;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "DFMEA");
+        XLSX.writeFile(wb, "DFMEA_Table.xlsx");
+    }
+    
+    // Initialize defaults
+    renderPresets();
+</script>
+
+</body>
+</html>
