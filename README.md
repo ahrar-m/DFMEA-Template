@@ -42,3 +42,6 @@ The tool is broken down into 6 easy tabs:
 * **Runs Locally:** Your data never leaves your computer. Everything happens right inside your web browser.
 * **Smart Sorting:** The final table groups component interactions logically so it is easy to read.
 * **Auto-Cleanup:** If you delete a part on Step 1, the tool automatically cleans up any features or dimensions attached to it in the background.
+
+## Future Scope
+- Upgrade interfaces matrix to have feature level selection (not all features of a component will interact with all features of other component)
