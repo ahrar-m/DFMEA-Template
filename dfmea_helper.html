@@ -575,8 +575,11 @@
     // --- Session JSON ---
     function exportSession() {
         const sessionData = { components, featuresByComp, interfaces, dimsByFeature, featImages, availablePresets, mechPresets, imgDescPresets, assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessionData));
-        const a = document.createElement('a'); a.href = dataStr; a.download = "dfmea_session.json"; document.body.appendChild(a); a.click(); a.remove();
+        const jsonStr = JSON.stringify(sessionData);
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = "dfmea_session.json"; document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
     }
     function importSession(event) {
         const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
@@ -695,7 +698,7 @@
         let html = '';
         components.forEach(c => { 
             html += `<div class="comp-group"><div class="comp-title">${c}</div>
-                <div class="input-group"><input type="text" id="featInp_${c.replace(/\s/g,'_')}" placeholder="Add Feature(s)..." onkeypress="handleEnter(event, () => addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}'))">
+                <div class="input-group"><input type="text" id="featInp_${c.replace(/\s/g,'_')}" placeholder="Add Feature(s)..." style="flex: 1; min-width: 200px;" onkeypress="handleEnter(event, () => addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}'))">
                 <button onclick="addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}')">Add</button></div><ul style="margin-top:0;">`;
             (featuresByComp[c]||[]).forEach(f => { html += `<li><span>${f}</span><div class="action-buttons"><button class="btn-warning" onclick="renameFeature('${c}', '${f}')">✏️</button><button class="btn-danger" onclick="removeFeature('${c}', '${f}')">🗑️</button></div></li>`; });
             html += `</ul></div>`;
@@ -771,7 +774,7 @@
         });
         document.getElementById(inputId).value = ''; 
         renderDimensionsTab(); 
-        harvestDimensions(); // Force update background assignments so calculation works instantly
+        harvestDimensions();
         updateMatrixTotalRows();
     }
 
@@ -854,8 +857,8 @@
                     html += `<div class="feat-group" style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border);">
                         <div class="feat-title" style="font-size: 16px; margin-bottom: 15px;">${f}</div>
                         
-                        <div class="input-group">
-                            <input type="text" id="${inId}" placeholder="Add Dimension(s)..." onkeypress="handleEnter(event, () => addDimension('${c}', '${f}', '${inId}'))">
+                        <div class="input-group" style="display: flex; width: 100%;">
+                            <input type="text" id="${inId}" placeholder="Add Dimension(s)..." style="flex: 1; min-width: 200px;" onkeypress="handleEnter(event, () => addDimension('${c}', '${f}', '${inId}'))">
                             <button onclick="addDimension('${c}', '${f}', '${inId}')">Add Dim</button>
                         </div>
                         <ul style="margin-top:0; margin-bottom: 20px;">`;
@@ -863,7 +866,6 @@
                         html += `<li style="background: var(--highlight-bg);"><span>${d}</span><div class="action-buttons"><button class="btn-warning" onclick="renameDimension('${c}', '${f}', '${d}')">✏️</button><button class="btn-danger" onclick="removeDimension('${c}', '${f}', '${d}')">🗑️</button></div></li>`;
                     });
                     html += `</ul>
-                        
                         <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
                             <strong style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Feature Reference Images</strong>
                             <div class="paste-zone" tabindex="0" data-cf="${key}" onclick="triggerFeatImageUpload('${c}', '${f}')" style="padding: 10px; margin-top: 10px;">
@@ -885,7 +887,6 @@
                             </div>`;
                         });
                     }
-                    
                     html += `</div></div></div>`;
                 });
                 html += `</div>`;
@@ -903,7 +904,25 @@
     }
 
     function saveAllDimensions() {
-        saveFeatImageDescs(); harvestDimensions(); switchTab(5);
+        // Automatically add any text typed but not "Added"
+        components.forEach(c => {
+            (featuresByComp[c] || []).forEach(f => {
+                let inId = `dimInp_${c.replace(/\s/g,'_')}_${f.replace(/\s/g,'_')}`;
+                let el = document.getElementById(inId);
+                if (el && el.value.trim() !== '') {
+                    let key = `${c}|${f}`; if(!dimsByFeature[key]) dimsByFeature[key] = [];
+                    el.value.split(',').map(v => cleanName(v).toLowerCase()).filter(v => v).forEach(val => {
+                        if (!dimsByFeature[key].includes(val)) dimsByFeature[key].push(val);
+                    });
+                }
+            });
+        });
+        
+        saveFeatImageDescs(); 
+        harvestDimensions(); 
+        renderDimensionsTab(); // Update UI
+        updateMatrixTotalRows(); // Update Count
+        switchTab(5);
     }
 
     // Global Paste Listener
@@ -1144,7 +1163,7 @@
     async function exportZip() {
         if (!workingTableData || workingTableData.length === 0) return alert("Please fill out data in the browser first.");
         saveCurrentRowData(); saveFeatImageDescs();
-        showLoading("Compiling your ZIP package... (Depending on image count, this may take a moment)", 0);
+        showLoading("Compiling your ZIP package...", 0);
         
         setTimeout(async () => {
             let zip = new JSZip(); let imgFolder = zip.folder("images"); let featImgFolder = zip.folder("images/features");
@@ -1179,7 +1198,8 @@
 
             // 3. Create Session JSON
             const sessionData = { components, featuresByComp, interfaces, dimsByFeature, featImages, availablePresets, mechPresets, imgDescPresets, assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData };
-            zip.file("dfmea_session.json", JSON.stringify(sessionData));
+            const jsonStr = JSON.stringify(sessionData);
+            zip.file("dfmea_session.json", jsonStr);
             const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }); zip.file("DFMEA_Table.xlsx", excelBuffer);
             
             zip.generateAsync({type:"blob"}, function updateCallback(metadata) { showLoading(`Zipping files: ${metadata.percent.toFixed(0)}%`, metadata.percent); }).then(function(content) {
