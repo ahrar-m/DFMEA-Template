@@ -9,84 +9,132 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --border: #cbd5e1; --progress: #10b981; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: #334155; margin: 0; padding: 20px; }
-        .container { max-width: 1250px; margin: 0 auto; background: white; padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        h1, h2, h3, h4 { color: #0f172a; margin-top: 0; }
+        /* DARK MODE DEFAULT VARIABLES */
+        :root { 
+            --primary: #3b82f6; 
+            --primary-hover: #60a5fa;
+            --bg: #0f172a; 
+            --card-bg: #1e293b;
+            --border: #334155; 
+            --progress: #10b981;
+            --text-main: #e2e8f0;
+            --text-heading: #f8fafc;
+            --text-muted: #94a3b8;
+            --highlight-bg: #0f172a;
+            --th-bg: #334155;
+            --info-bg: #1e3a8a;
+            --info-border: #3b82f6;
+            --info-text: #bfdbfe;
+            --success-bg: #064e3b;
+            --success-border: #166534;
+            --success-text: #86efac;
+        }
+
+        /* LIGHT MODE VARIABLES */
+        body.light-mode {
+            --primary: #2563eb; 
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc; 
+            --card-bg: #ffffff;
+            --border: #cbd5e1; 
+            --text-main: #334155;
+            --text-heading: #0f172a;
+            --text-muted: #64748b;
+            --highlight-bg: #f8fafc;
+            --th-bg: #f1f5f9;
+            --info-bg: #e0e7ff;
+            --info-border: #c7d2fe;
+            --info-text: #1e40af;
+            --success-bg: #f0fdf4;
+            --success-border: #86efac;
+            --success-text: #166534;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 1250px; margin: 0 auto; background: var(--card-bg); padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background-color 0.3s; }
+        h1, h2, h3, h4 { color: var(--text-heading); margin-top: 0; }
         
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
         .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
-        .tab { padding: 10px 15px; cursor: pointer; border: none; background: none; font-size: 15px; font-weight: 600; color: #64748b; }
+        .tab { padding: 10px 15px; cursor: pointer; border: none; background: none; font-size: 15px; font-weight: 600; color: var(--text-muted); }
         .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -2px; }
         .tab-content { display: none; } .tab-content.active { display: block; }
 
-        input[type="text"], input[type="number"], select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; margin-right: 10px; font-size: 14px; }
+        input[type="text"], input[type="number"], select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; margin-right: 10px; font-size: 14px; background: var(--card-bg); color: var(--text-main); }
         .input-group { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .input-stacked { flex-direction: column; align-items: flex-start; margin-bottom: 20px; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 6px; }
-        .input-stacked label { font-weight: 600; margin-bottom: 8px; color: #0f172a; display: block;}
+        .input-stacked { flex-direction: column; align-items: flex-start; margin-bottom: 20px; background: var(--highlight-bg); padding: 15px; border: 1px solid var(--border); border-radius: 6px; }
+        .input-stacked label { font-weight: 600; margin-bottom: 8px; color: var(--text-heading); display: block;}
         .input-stacked input, .input-stacked select { width: 100%; box-sizing: border-box; }
 
-        button { background-color: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; }
-        button:hover { background-color: #1d4ed8; }
+        button { background-color: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background-color 0.2s; }
+        button:hover { background-color: var(--primary-hover); }
         .btn-success { background-color: #16a34a; } .btn-success:hover { background-color: #15803d; }
         .btn-danger { background-color: #ef4444; padding: 4px 8px; font-size: 12px; }
         .btn-warning { background-color: #f59e0b; color: white; } .btn-info { background-color: #0ea5e9; color: white; }
         .btn-save-large { width: 100%; max-width: 630px; padding: 12px; font-size: 16px; margin-top: 10px; }
-        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline { background-color: transparent; border: 2px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
 
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid var(--border); padding: 10px; text-align: center; font-size: 13px; }
-        th { background-color: #f1f5f9; }
+        th { background-color: var(--th-bg); color: var(--text-heading); }
         
         .matrix-wrapper { max-height: 400px; overflow: auto; border: 1px solid var(--border); position: relative; }
-        .matrix-wrapper th { position: sticky; top: 0; z-index: 2; background-color: #f1f5f9; white-space: nowrap; }
-        .matrix-wrapper td:first-child { position: sticky; left: 0; z-index: 1; background-color: #f1f5f9; font-weight: bold; }
-        .diagonal { background-color: #e2e8f0; color: #94a3b8; }
+        .matrix-wrapper th { position: sticky; top: 0; z-index: 2; background-color: var(--th-bg); white-space: nowrap; }
+        .matrix-wrapper td:first-child { position: sticky; left: 0; z-index: 1; background-color: var(--th-bg); font-weight: bold; color: var(--text-heading); }
+        .diagonal { background-color: var(--border); color: var(--text-muted); }
 
         ul { list-style-type: none; padding: 0; }
-        li { background: #f8fafc; margin-bottom: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-        .hint { font-size: 13px; color: #64748b; margin-top: -10px; margin-bottom: 15px; display: block; }
+        li { background: var(--highlight-bg); margin-bottom: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .hint { font-size: 13px; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px; display: block; }
         .section-divider { border-top: 1px dashed var(--border); margin: 30px 0; padding-top: 20px; }
-        .dim-assignment-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
+        .dim-assignment-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--border); }
         .dim-assignment-row select { width: 300px; }
         
-        .populate-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 5px; margin-bottom: 20px; }
+        .info-box { background: var(--info-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--info-border); margin-bottom: 15px; }
+        .info-box strong { color: var(--info-text); }
+        
+        .success-box { display: none; background: var(--success-bg); border: 1px solid var(--success-border); padding: 15px; border-radius: 6px; margin-bottom: 20px; color: var(--success-text); }
+
+        .populate-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+        .progress-container { width: 100%; background-color: var(--border); border-radius: 4px; overflow: hidden; margin-top: 5px; margin-bottom: 20px; }
         .progress-bar { height: 8px; background-color: var(--progress); width: 0%; transition: width 0.3s ease; }
-        .rpn-box { font-size: 24px; font-weight: bold; padding: 10px 20px; background: white; border: 2px solid var(--border); border-radius: 6px; display: inline-block; min-width: 60px; text-align: center; }
+        .rpn-box { font-size: 24px; font-weight: bold; padding: 10px 20px; background: var(--card-bg); border: 2px solid var(--border); border-radius: 6px; display: inline-block; min-width: 60px; text-align: center; color: var(--text-heading); }
         .sod-select { width: 100%; font-size: 13px; }
         
-        .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 6px; display: inline-flex; }
-        .sub-tab-btn { background: transparent; color: #475569; border: none; padding: 6px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        .sub-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: var(--highlight-bg); padding: 5px; border-radius: 6px; display: inline-flex; border: 1px solid var(--border); }
+        .sub-tab-btn { background: transparent; color: var(--text-muted); border: none; padding: 6px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .sub-tab-btn.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         .sub-tab-content { display: none; } .sub-tab-content.active { display: block; }
 
-        /* Improved Index Grouping */
-        .comp-group { margin-bottom: 20px; background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 15px; }
-        .comp-title { font-size: 18px; color: #1e3a8a; border-bottom: 2px solid #bfdbfe; padding-bottom: 5px; margin-bottom: 15px; }
+        .comp-group { margin-bottom: 20px; background: var(--highlight-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; }
+        .comp-title { font-size: 18px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 5px; margin-bottom: 15px; font-weight: bold; }
         .feat-group { margin-left: 15px; margin-bottom: 15px; }
-        .feat-title { font-size: 15px; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .feat-title::before { content: '•'; color: #94a3b8; font-weight: bold; }
+        .feat-title { font-size: 15px; color: var(--text-heading); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .feat-title::before { content: '•'; color: var(--text-muted); font-weight: bold; }
         .range-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-left: 25px; }
-        .range-btn { background: white; border: 1px solid var(--border); padding: 12px; text-align: left; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
-        .range-btn:hover { border-color: var(--primary); box-shadow: 0 2px 5px rgba(37,99,235,0.1); }
-        .range-target { font-weight: bold; color: #334155; font-size: 13px; }
-        .range-badge { background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .range-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 12px; text-align: left; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .range-btn:hover { border-color: var(--primary); }
+        .range-target { font-weight: bold; color: var(--text-main); font-size: 13px; }
+        .range-badge { background: var(--info-bg); color: var(--info-text); padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
 
-        .paste-zone { border: 2px dashed var(--border); background: #f8fafc; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; color: #64748b; transition: background 0.2s; margin-bottom: 15px; }
-        .paste-zone:hover { background: #eff6ff; border-color: #93c5fd; color: var(--primary); }
-        .img-card { display: flex; gap: 15px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; background: white; align-items: flex-start; }
-        .img-thumb { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #e2e8f0; }
+        .paste-zone { border: 2px dashed var(--border); background: var(--highlight-bg); padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: background 0.2s; margin-bottom: 15px; }
+        .paste-zone:hover { background: var(--info-bg); border-color: var(--primary); color: var(--info-text); }
+        .img-card { display: flex; gap: 15px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; background: var(--card-bg); align-items: flex-start; }
+        .img-thumb { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); }
         .img-details { flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
         
-        .pdf-drop-zone { border: 3px dashed #93c5fd; background: #eff6ff; padding: 40px; text-align: center; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
-        .pdf-drop-zone:hover { background: #dbeafe; border-color: #3b82f6; }
+        .pdf-drop-zone { border: 3px dashed var(--primary); background: var(--highlight-bg); padding: 40px; text-align: center; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
+        .pdf-drop-zone:hover { background: var(--info-bg); }
 
         /* LOADING OVERLAY CSS */
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        body.light-mode .loading-overlay { background: rgba(255,255,255,0.9); }
+        .loading-spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .loading-bar-wrapper { width: 300px; height: 10px; background: #e2e8f0; border-radius: 5px; margin-top: 15px; overflow: hidden; display: none; }
+        .loading-bar-wrapper { width: 300px; height: 10px; background: var(--border); border-radius: 5px; margin-top: 15px; overflow: hidden; display: none; }
         .loading-bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.1s; }
     </style>
 </head>
@@ -94,14 +142,17 @@
 
 <div id="loadingOverlay" class="loading-overlay" style="display: none;">
     <div class="loading-spinner"></div>
-    <h2 id="loadingText" style="margin:0; color: #0f172a;">Processing...</h2>
+    <h2 id="loadingText" style="margin:0; color: var(--text-heading);">Processing...</h2>
     <div class="loading-bar-wrapper" id="loadingBarWrapper">
         <div id="loadingBarFill" class="loading-bar-fill"></div>
     </div>
 </div>
 
 <div class="container">
-    <h1>DFMEA Helper</h1>
+    <div class="header-bar">
+        <h1>DFMEA Helper</h1>
+        <button onclick="toggleTheme()" class="btn-outline" id="themeBtn">☀️ Light Mode</button>
+    </div>
     
     <div class="tabs">
         <button class="tab active" onclick="switchTab(1)" id="btnTab1">1. Components</button>
@@ -147,11 +198,18 @@
         <div class="section-divider"></div>
 
         <h2>Assign Extremes to Dimensions</h2>
-        <div style="margin-bottom: 15px; background: #e0e7ff; padding: 15px; border-radius: 6px; border: 1px solid #c7d2fe;">
-            <label><input type="radio" name="assignMode" value="global" checked onchange="toggleAssignMode()"> Unique Dimensions (Global)</label><br>
-            <label><input type="radio" name="assignMode" value="specific" onchange="toggleAssignMode()"> By Component & Feature (Specific)</label>
+        <div class="info-box">
+            <strong style="display: block; margin-bottom: 10px;">Assignment Mode:</strong>
+            <label style="display: block; margin-left: 10px; margin-bottom: 10px; cursor: pointer;">
+                <input type="radio" name="assignMode" value="global" checked onchange="toggleAssignMode()"> 
+                <span><strong>Unique Dimensions (Global)</strong> - Applies preset to matching dimension names everywhere.</span>
+            </label>
+            <label style="display: block; margin-left: 10px; cursor: pointer;">
+                <input type="radio" name="assignMode" value="specific" onchange="toggleAssignMode()"> 
+                <span><strong>By Component & Feature (Specific)</strong> - Allows different presets for the exact same dimension name.</span>
+            </label>
         </div>
-        <div id="assignmentsContainer" style="background: #f8fafc; padding: 10px; margin-bottom: 20px;"></div>
+        <div id="assignmentsContainer" style="background: var(--highlight-bg); border: 1px solid var(--border); padding: 10px; border-radius: 6px; margin-bottom: 20px;"></div>
         
         <div class="section-divider"></div>
 
@@ -216,23 +274,23 @@
                 <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
 
                 <div class="populate-card">
-                    <div style="background: #f8fafc; padding: 12px; border: 1px dashed var(--border); border-radius: 4px; margin-bottom: 20px;">
-                        <p style="margin: 0 0 5px 0; font-size: 15px;"><strong>Interface:</strong> <span id="popInterface"></span></p>
-                        <p style="margin: 0; color: #b91c1c; font-size: 15px;"><strong>Cause:</strong> <span id="popCause"></span></p>
+                    <div style="background: var(--highlight-bg); padding: 12px; border: 1px dashed var(--border); border-radius: 4px; margin-bottom: 20px;">
+                        <p style="margin: 0 0 5px 0; font-size: 15px; color: var(--text-heading);"><strong>Interface:</strong> <span id="popInterface"></span></p>
+                        <p style="margin: 0; color: #ef4444; font-size: 15px;"><strong>Cause:</strong> <span id="popCause"></span></p>
                     </div>
                     <div class="input-stacked"><label>Failure Mode</label><input type="text" id="popMode" oninput="saveCurrentRowData()"></div>
-                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-                        <div style="flex: 1;"><label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 5px;">Failure Mechanism</label><select id="popMechPreset" onchange="saveCurrentRowData()" style="width: 100%; padding: 8px;"></select></div>
-                        <div style="flex: 2;"><label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 5px;">Details</label><input type="text" id="popMechDetails" oninput="saveCurrentRowData()" style="width: 100%; padding: 8px;"></div>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 250px;"><label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 5px; color: var(--text-heading);">Failure Mechanism</label><select id="popMechPreset" onchange="saveCurrentRowData()"></select></div>
+                        <div style="flex: 2; min-width: 250px;"><label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 5px; color: var(--text-heading);">Details</label><input type="text" id="popMechDetails" oninput="saveCurrentRowData()"></div>
                     </div>
                     <div class="input-stacked"><label>Effect of Failure</label><input type="text" id="popEffect" oninput="saveCurrentRowData()"></div>
                     <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
-                        <div><label style="font-weight: 600; font-size: 14px;">Severity (S)</label><select id="popSev" class="sod-select" onchange="saveCurrentRowData()"></select></div>
-                        <div><label style="font-weight: 600; font-size: 14px;">Occurrence (O)</label><select id="popOcc" class="sod-select" onchange="saveCurrentRowData()"></select></div>
-                        <div><label style="font-weight: 600; font-size: 14px;">Detection (D)</label><select id="popDet" class="sod-select" onchange="saveCurrentRowData()"></select></div>
+                        <div><label style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Severity (S)</label><select id="popSev" class="sod-select" onchange="saveCurrentRowData()"></select></div>
+                        <div><label style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Occurrence (O)</label><select id="popOcc" class="sod-select" onchange="saveCurrentRowData()"></select></div>
+                        <div><label style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Detection (D)</label><select id="popDet" class="sod-select" onchange="saveCurrentRowData()"></select></div>
                     </div>
-                    <div style="text-align: right; border-top: 1px solid #e2e8f0; padding-top: 15px; margin-bottom: 20px;">
-                        <span style="font-weight: 600; margin-right: 15px;">Calculated RPN:</span><div id="popRpn" class="rpn-box">-</div>
+                    <div style="text-align: right; border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 20px;">
+                        <span style="font-weight: 600; margin-right: 15px; color: var(--text-heading);">Calculated RPN:</span><div id="popRpn" class="rpn-box">-</div>
                     </div>
 
                     <div class="section-divider" style="margin: 20px 0;"></div>
@@ -260,15 +318,15 @@
 
     <div id="tab7" class="tab-content">
         <h2>Generate PDF Report</h2>
-        <p>Upload the <strong>.zip file</strong> you exported from Tab 6. This tool will automatically compile the Excel data and the attached images into a paginated, hyperlinked PDF.</p>
+        <p class="hint">Upload the <strong>.zip file</strong> you exported from Tab 6. This tool will automatically compile the Excel data and images into a paginated PDF.</p>
         
         <div class="pdf-drop-zone" onclick="document.getElementById('pdfZipInput').click()">
-            <h3 style="margin-bottom: 10px; color: #1e40af;">📂 Click here to select your DFMEA .zip export</h3>
-            <p style="margin: 0; color: #64748b;">It will read the Excel and Images folders automatically.</p>
+            <h3 style="margin-bottom: 10px; color: var(--primary);">📂 Click here to select your DFMEA .zip export</h3>
+            <p style="margin: 0; color: var(--text-muted);">It will read the Excel and Images folders automatically.</p>
         </div>
         <input type="file" id="pdfZipInput" accept=".zip" style="display:none;" onchange="handleZipUploadForPDF(event)">
         
-        <div id="pdfStatus" style="display:none; background: #f0fdf4; border: 1px solid #86efac; padding: 15px; border-radius: 6px; margin-bottom: 20px; color: #166534;">
+        <div id="pdfStatus" class="success-box">
             <strong>✅ ZIP Loaded Successfully!</strong> Found <span id="pdfRowCount">0</span> rows and <span id="pdfImgCount">0</span> images.
         </div>
 
@@ -278,6 +336,28 @@
 </div>
 
 <script>
+    // --- THEME TOGGLE ---
+    function toggleTheme() {
+        const body = document.body;
+        body.classList.toggle('light-mode');
+        const isLight = body.classList.contains('light-mode');
+        document.getElementById('themeBtn').innerText = isLight ? '🌙 Dark Mode' : '☀️ Light Mode';
+        localStorage.setItem('dfmea-theme', isLight ? 'light' : 'dark');
+        
+        // Refresh visible elements that rely on JS for hardcoded colors
+        if(document.getElementById('populateSection').style.display === 'block') {
+            saveCurrentRowData(); // re-triggers RPN color logic
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('dfmea-theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            document.getElementById('themeBtn').innerText = '🌙 Dark Mode';
+        }
+    });
+
     // --- UI LOADING HELPER ---
     function showLoading(text, percent) {
         document.getElementById('loadingOverlay').style.display = 'flex';
@@ -314,9 +394,7 @@
     let assignmentMode = 'global'; let globalDimAssignments = {}; let specificDimAssignments = {}; 
     let finalTableData = []; let workingTableData = []; let populateIndex = 0;
     
-    // PDF State
     let pdfGenerationData = { rows: [], imageMap: {} };
-
     populateSelects();
 
     // --- Utility ---
@@ -383,9 +461,9 @@
         let allFeats = []; components.forEach(c => { (featuresByComp[c]||[]).forEach(f => allFeats.push({c, f})); });
         if(allFeats.length < 2) return;
         let html = '<table><thead><tr><th></th>';
-        allFeats.forEach(o => { html += `<th>${o.c}<br><small>${o.f}</small></th>`; }); html += '</tr></thead><tbody>';
+        allFeats.forEach(o => { html += `<th>${o.c}<br><small style="color:var(--text-muted);">${o.f}</small></th>`; }); html += '</tr></thead><tbody>';
         for (let i=0; i<allFeats.length; i++) {
-            html += `<tr><td>${allFeats[i].c}<br><small>${allFeats[i].f}</small></td>`;
+            html += `<tr><td>${allFeats[i].c}<br><small style="font-weight:normal; color:var(--text-muted);">${allFeats[i].f}</small></td>`;
             for (let j=0; j<allFeats.length; j++) {
                 if (allFeats[i].c === allFeats[j].c) html += '<td class="diagonal">N/A</td>';
                 else {
@@ -478,7 +556,7 @@
             workingTableData.forEach((r) => {
                 let mechStr = r.mechPreset ? (r.mechDetails ? `${r.mechPreset} - ${r.mechDetails}` : r.mechPreset) : (r.mechDetails || "");
                 let imgCount = r.images ? r.images.length : 0;
-                tb.innerHTML += `<tr><td><strong>${r.interface}</strong></td><td>${r.mode}</td><td>${r.effect}</td><td>${r.cause}</td><td>${mechStr}</td><td>${r.sev}</td><td>${r.occ}</td><td>${r.det}</td><td>${r.rpn}</td><td>${imgCount > 0 ? imgCount + ' img' : ''}</td></tr>`;
+                tb.innerHTML += `<tr><td><strong>${r.interface}</strong></td><td>${r.mode}</td><td>${r.effect}</td><td>${r.cause}</td><td>${mechStr}</td><td>${r.sev}</td><td>${r.occ}</td><td>${r.det}</td><td><span style="color:${r.rpn >= 100 ? '#ef4444' : r.rpn >= 50 ? '#f59e0b' : 'inherit'}; font-weight:bold;">${r.rpn}</span></td><td>${imgCount > 0 ? imgCount + ' img' : ''}</td></tr>`;
             });
         } else {
             document.getElementById('btnClearData').style.display = 'none'; generateData();
@@ -577,7 +655,12 @@
 
     function updateRPNDisplay(r) {
         let b = document.getElementById('popRpn'); b.innerText = r.rpn || "-";
-        b.style.color = r.rpn >= 100 ? "#ef4444" : r.rpn >= 50 ? "#f59e0b" : "#0f172a"; b.style.borderColor = r.rpn >= 100 ? "#ef4444" : r.rpn >= 50 ? "#f59e0b" : "var(--border)";
+        
+        // Use a safe color for the base text if RPN is low, depending on theme
+        let baseColor = document.body.classList.contains('light-mode') ? '#0f172a' : '#f8fafc';
+        
+        b.style.color = r.rpn >= 100 ? "#ef4444" : r.rpn >= 50 ? "#f59e0b" : baseColor; 
+        b.style.borderColor = r.rpn >= 100 ? "#ef4444" : r.rpn >= 50 ? "#f59e0b" : "var(--border)";
     }
 
     function navigatePopulate(dir) { saveCurrentRowData(); let n = populateIndex + dir; if(n>=0 && n<workingTableData.length) { populateIndex = n; renderPopulateStep(); } }
@@ -629,7 +712,6 @@
         saveCurrentRowData();
         showLoading("Compiling your ZIP package... (Depending on image count, this may take a moment)", 0);
         
-        // Slight delay to allow DOM to render loading screen before heavy lifting
         setTimeout(async () => {
             let zip = new JSZip(); let imgFolder = zip.folder("images");
             let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN", "Attached Images", "Image Descriptions"]];
@@ -709,7 +791,7 @@
     function generatePDFReport() {
         if (!pdfGenerationData || pdfGenerationData.rows.length === 0) return;
         
-        showLoading("Generating high-resolution PDF... This may take several seconds depending on image sizes.");
+        showLoading("Generating high-resolution PDF... This may take several seconds.");
 
         setTimeout(() => {
             let rows = pdfGenerationData.rows;
@@ -748,17 +830,15 @@
                             margin: [35, 3, 0, 3] 
                         });
                     });
-                    // Small gap after a feature group
                     content.push({ text: '', margin: [0, 0, 0, 8] });
                 }
             }
             content.push({ text: '', pageBreak: 'after' });
 
-            // 3. Row Pages (One per row + Attachment pages)
+            // 3. Row Pages
             rows.forEach((r, i) => {
                 content.push({ text: `Row ${i + 1} Detail`, id: `row_${i}`, style: 'header', margin: [0, 0, 0, 15] });
                 
-                // Custom Table Design
                 content.push({
                     table: {
                         widths: ['30%', '70%'],
@@ -787,37 +867,26 @@
                     margin: [0, 0, 0, 20]
                 });
 
-                // Append Images
                 if (r.imgFiles && r.imgFiles.length > 0) {
                     r.imgFiles.forEach((filename) => {
                         if (images[filename]) {
                             content.push({ text: '', pageBreak: 'before' });
-                            
-                            // Attachment Header
                             content.push({
-                                table: {
-                                    widths: ['*'],
-                                    body: [ [ {text: `Attachment: Row ${i + 1}`, style: 'attachHeader'} ] ]
-                                }, layout: 'noBorders', margin: [0, 0, 0, 20]
+                                table: { widths: ['*'], body: [ [ {text: `Attachment: Row ${i + 1}`, style: 'attachHeader'} ] ] }, 
+                                layout: 'noBorders', margin: [0, 0, 0, 20]
                             });
                             
-                            // Description Extraction
                             let desc = r.imgDescs.find(d => d.startsWith(`[${filename}]`));
                             if (desc) desc = desc.replace(`[${filename}] `, ''); else desc = "No description provided.";
                             
-                            // The Image itself
                             content.push({ image: images[filename], width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
-                            
-                            // Caption
                             content.push({ text: desc, alignment: 'center', italics: true, color: '#475569', fontSize: 10 });
                         }
                     });
                 }
-                
                 if (i < rows.length - 1) content.push({ text: '', pageBreak: 'after' });
             });
 
-            // Generate Document Setup
             let docDefinition = {
                 pageSize: 'A4',
                 pageMargins: [40, 60, 40, 60],
@@ -848,13 +917,10 @@
                 defaultStyle: { font: 'Roboto', fontSize: 11, lineHeight: 1.3 }
             };
 
-            pdfMake.createPdf(docDefinition).download('DFMEA_Report.pdf', () => {
-                hideLoading();
-            });
+            pdfMake.createPdf(docDefinition).download('DFMEA_Report.pdf', () => { hideLoading(); });
             
-        }, 100); // 100ms timeout allows the loading UI to render
+        }, 100);
     }
-
 </script>
 </body>
 </html>
