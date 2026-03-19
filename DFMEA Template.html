@@ -5,90 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DFMEA Generator Helper</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --border: #cbd5e1;
-            --progress: #10b981;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: #334155;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        h1, h2, h3 { color: #0f172a; margin-top: 0; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --border: #cbd5e1; --progress: #10b981; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: #334155; margin: 0; padding: 20px; }
+        .container { max-width: 1250px; margin: 0 auto; background: white; padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1, h2, h3, h4 { color: #0f172a; margin-top: 0; }
         
-        /* Tabs */
         .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
         .tab { padding: 10px 15px; cursor: pointer; border: none; background: none; font-size: 15px; font-weight: 600; color: #64748b; }
         .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -2px; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content { display: none; } .tab-content.active { display: block; }
 
-        /* Form Controls */
-        input[type="text"], input[type="number"], select {
-            padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; margin-right: 10px; font-size: 14px;
-        }
+        input[type="text"], input[type="number"], select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; margin-right: 10px; font-size: 14px; }
         .input-group { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .input-stacked { flex-direction: column; align-items: flex-start; margin-bottom: 20px; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 6px; }
-        .input-stacked label { font-weight: 600; margin-bottom: 8px; color: #0f172a; }
-        .input-stacked input { width: 100%; max-width: 600px; box-sizing: border-box; }
+        .input-stacked label { font-weight: 600; margin-bottom: 8px; color: #0f172a; display: block;}
+        .input-stacked input, .input-stacked select { width: 100%; box-sizing: border-box; }
 
         button { background-color: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; }
         button:hover { background-color: #1d4ed8; }
-        .btn-success { background-color: #16a34a; }
-        .btn-success:hover { background-color: #15803d; }
+        .btn-success { background-color: #16a34a; } .btn-success:hover { background-color: #15803d; }
         .btn-danger { background-color: #ef4444; padding: 4px 8px; font-size: 12px; }
-        .btn-warning { background-color: #f59e0b; color: white; }
-        .btn-warning:hover { background-color: #d97706; }
-        .btn-info { background-color: #0ea5e9; color: white; }
+        .btn-warning { background-color: #f59e0b; color: white; } .btn-info { background-color: #0ea5e9; color: white; }
         .btn-save-large { width: 100%; max-width: 630px; padding: 12px; font-size: 16px; margin-top: 10px; }
         .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
-        .btn-outline:hover { background-color: #eff6ff; }
 
-        /* General Table */
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid var(--border); padding: 10px; text-align: center; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: center; font-size: 13px; }
         th { background-color: #f1f5f9; }
         
-        /* Matrix Specific Styling */
-        .matrix-wrapper { max-height: 600px; overflow: auto; border: 1px solid var(--border); position: relative; }
-        .matrix-wrapper table { margin-top: 0; }
+        .matrix-wrapper { max-height: 400px; overflow: auto; border: 1px solid var(--border); position: relative; }
         .matrix-wrapper th { position: sticky; top: 0; z-index: 2; background-color: #f1f5f9; white-space: nowrap; }
-        .matrix-wrapper th:first-child { left: 0; z-index: 3; text-align: right; border-right: 2px solid var(--border); }
-        .matrix-wrapper td:first-child { position: sticky; left: 0; z-index: 1; background-color: #f1f5f9; font-weight: bold; text-align: right; border-right: 2px solid var(--border); white-space: nowrap; }
+        .matrix-wrapper td:first-child { position: sticky; left: 0; z-index: 1; background-color: #f1f5f9; font-weight: bold; }
         .diagonal { background-color: #e2e8f0; color: #94a3b8; }
 
-        /* Lists & Helpers */
         ul { list-style-type: none; padding: 0; }
         li { background: #f8fafc; margin-bottom: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
         .hint { font-size: 13px; color: #64748b; margin-top: -10px; margin-bottom: 15px; display: block; }
         .section-divider { border-top: 1px dashed var(--border); margin: 30px 0; padding-top: 20px; }
-        
         .dim-assignment-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
-        .dim-assignment-row:last-child { border-bottom: none; }
         .dim-assignment-row select { width: 300px; }
         
-        /* Populate Form Styling */
-        .populate-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 15px; }
+        .populate-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 5px; margin-bottom: 20px; }
         .progress-bar { height: 8px; background-color: var(--progress); width: 0%; transition: width 0.3s ease; }
-        .rpn-box { font-size: 24px; font-weight: bold; padding: 10px 20px; background: white; border: 2px solid var(--border); border-radius: 6px; display: inline-block; }
+        .rpn-box { font-size: 24px; font-weight: bold; padding: 10px 20px; background: white; border: 2px solid var(--border); border-radius: 6px; display: inline-block; min-width: 60px; text-align: center; }
+        .sod-select { width: 100%; font-size: 13px; }
+        
+        .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 6px; display: inline-flex; }
+        .sub-tab-btn { background: transparent; color: #475569; border: none; padding: 6px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .sub-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .sub-tab-content { display: none; } .sub-tab-content.active { display: block; }
+
+        /* Improved Index Grouping */
+        .comp-group { margin-bottom: 20px; background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 15px; }
+        .comp-title { font-size: 18px; color: #1e3a8a; border-bottom: 2px solid #bfdbfe; padding-bottom: 5px; margin-bottom: 15px; }
+        .feat-group { margin-left: 15px; margin-bottom: 15px; }
+        .feat-title { font-size: 15px; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .feat-title::before { content: '•'; color: #94a3b8; font-weight: bold; }
+        .range-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-left: 25px; }
+        .range-btn { background: white; border: 1px solid var(--border); padding: 12px; text-align: left; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .range-btn:hover { border-color: var(--primary); box-shadow: 0 2px 5px rgba(37,99,235,0.1); }
+        .range-target { font-weight: bold; color: #334155; font-size: 13px; }
+        .range-badge { background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+
+        .paste-zone { border: 2px dashed var(--border); background: #f8fafc; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; color: #64748b; transition: background 0.2s; margin-bottom: 15px; }
+        .paste-zone:hover { background: #eff6ff; border-color: #93c5fd; color: var(--primary); }
+        .img-card { display: flex; gap: 15px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; background: white; align-items: flex-start; }
+        .img-thumb { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #e2e8f0; }
+        .img-details { flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
+        
+        .pdf-drop-zone { border: 3px dashed #93c5fd; background: #eff6ff; padding: 40px; text-align: center; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
+        .pdf-drop-zone:hover { background: #dbeafe; border-color: #3b82f6; }
+
+        /* LOADING OVERLAY CSS */
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-bar-wrapper { width: 300px; height: 10px; background: #e2e8f0; border-radius: 5px; margin-top: 15px; overflow: hidden; display: none; }
+        .loading-bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.1s; }
     </style>
 </head>
 <body>
+
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <h2 id="loadingText" style="margin:0; color: #0f172a;">Processing...</h2>
+    <div class="loading-bar-wrapper" id="loadingBarWrapper">
+        <div id="loadingBarFill" class="loading-bar-fill"></div>
+    </div>
+</div>
 
 <div class="container">
     <h1>DFMEA Helper</h1>
@@ -96,40 +106,33 @@
     <div class="tabs">
         <button class="tab active" onclick="switchTab(1)" id="btnTab1">1. Components</button>
         <button class="tab" onclick="switchTab(2)" id="btnTab2">2. Features</button>
-        <button class="tab" onclick="switchTab(3)" id="btnTab3">3. Interfaces Matrix</button>
+        <button class="tab" onclick="switchTab(3)" id="btnTab3">3. Interfaces</button>
         <button class="tab" onclick="switchTab(4)" id="btnTab4">4. Dimensions</button>
-        <button class="tab" onclick="switchTab(5)" id="btnTab5">5. Settings & Presets</button>
-        <button class="tab" onclick="switchTab(6)" id="btnTab6">6. Generate & Export</button>
+        <button class="tab" onclick="switchTab(5)" id="btnTab5">5. Settings</button>
+        <button class="tab" onclick="switchTab(6)" id="btnTab6">6. Populate</button>
+        <button class="tab" onclick="switchTab(7)" id="btnTab7">7. PDF Report</button>
     </div>
 
     <div id="tab1" class="tab-content active">
         <h2>Define Components</h2>
-        <span class="hint">Enter multiple components separated by commas.</span>
-        <div class="input-group">
-            <input type="text" id="compInput" placeholder="e.g., Holder, Base, Screw" style="width: 300px;" onkeypress="handleEnter(event, addComponent)">
-            <button onclick="addComponent()">Add Component(s)</button>
-        </div>
-        <ul id="compList"></ul>
-        <button class="btn-success" onclick="switchTab(2)" style="width: 100%; max-width: 300px; margin-top: 10px;">Continue to Features ➔</button>
+        <div class="input-group"><input type="text" id="compInput" placeholder="e.g., Holder, Base" style="width: 300px;" onkeypress="handleEnter(event, addComponent)"><button onclick="addComponent()">Add Component(s)</button></div>
+        <ul id="compList"></ul><button class="btn-success" onclick="switchTab(2)">Continue ➔</button>
     </div>
 
     <div id="tab2" class="tab-content">
         <h2>Component Features</h2>
-        <span class="hint">Enter a comma-separated list of physical features for each component.</span>
         <div id="featuresContainer"></div>
         <button class="btn-success btn-save-large" onclick="saveAllFeatures()" id="btnSaveFeatures" style="display:none;">💾 Save Features & Build Matrix ➔</button>
     </div>
 
     <div id="tab3" class="tab-content">
         <h2>Feature-to-Feature Matrix</h2>
-        <p>Uncheck combinations where these specific features do not physically interact.</p>
         <div id="matrixContainer" class="matrix-wrapper"></div>
-        <button class="btn-success btn-save-large" onclick="switchTab(4)" id="btnContinueFromMatrix" style="display:none; margin-top: 20px;">Continue to Dimensions ➔</button>
+        <button class="btn-success btn-save-large" onclick="switchTab(4)" id="btnContinueFromMatrix" style="display:none; margin-top: 20px;">Continue ➔</button>
     </div>
 
     <div id="tab4" class="tab-content">
         <h2>Feature Dimensions</h2>
-        <span class="hint">Enter a comma-separated list of dimensions for each feature.</span>
         <div id="dimensionsContainer"></div>
         <button class="btn-success btn-save-large" onclick="saveAllDimensions()" id="btnSaveDimensions" style="display:none;">💾 Save Dimensions & Assign Presets ➔</button>
     </div>
@@ -141,745 +144,717 @@
             <button class="btn-warning" onclick="document.getElementById('importFile').click()">📂 Load Session (.json)</button>
             <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importSession(event)">
         </div>
-
         <div class="section-divider"></div>
 
-        <h2>Assign Extremes to Your Dimensions</h2>
-        
+        <h2>Assign Extremes to Dimensions</h2>
         <div style="margin-bottom: 15px; background: #e0e7ff; padding: 15px; border-radius: 6px; border: 1px solid #c7d2fe;">
-            <strong style="display: block; margin-bottom: 10px; color: #1e40af;">Assignment Mode:</strong>
-            <label style="display: block; margin-left: 10px; margin-bottom: 10px; cursor: pointer;">
-                <input type="radio" name="assignMode" value="global" checked onchange="toggleAssignMode()"> 
-                <strong>Unique Dimensions (Global)</strong> - Applies preset to matching dimension names everywhere.
-            </label>
-            <label style="display: block; margin-left: 10px; cursor: pointer;">
-                <input type="radio" name="assignMode" value="specific" onchange="toggleAssignMode()"> 
-                <strong>By Component & Feature (Specific)</strong> - Allows different presets for the exact same dimension name.
-            </label>
+            <label><input type="radio" name="assignMode" value="global" checked onchange="toggleAssignMode()"> Unique Dimensions (Global)</label><br>
+            <label><input type="radio" name="assignMode" value="specific" onchange="toggleAssignMode()"> By Component & Feature (Specific)</label>
         </div>
-
-        <div id="assignmentsContainer" style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 20px;">
-            </div>
-
+        <div id="assignmentsContainer" style="background: #f8fafc; padding: 10px; margin-bottom: 20px;"></div>
+        
         <div class="section-divider"></div>
 
-        <h2>Manage Available Presets</h2>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+                <h2>Failure Mechanisms</h2>
+                <span class="hint">Accepts CSV</span>
+                <div class="input-group"><input type="text" id="mechInput" placeholder="e.g., Yielding, Fatigue" style="width: 100%;"><button onclick="addMechPreset()" style="width: 100%; margin-top: 5px;">Add</button></div>
+                <ul id="mechList"></ul>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+                <h2>Image Descriptions</h2>
+                <span class="hint">Accepts CSV</span>
+                <div class="input-group"><input type="text" id="imgDescInput" placeholder="e.g., CAD Screenshot" style="width: 100%;"><button onclick="addImgDescPreset()" style="width: 100%; margin-top: 5px;">Add</button></div>
+                <ul id="imgDescList"></ul>
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+        <h2>Manage Dimension Presets</h2>
         <div class="input-group">
-            <input type="text" id="presetExt1" placeholder="Extreme 1 (e.g., too thick)">
-            <input type="text" id="presetExt2" placeholder="Extreme 2 (e.g., too thin)">
-            <button onclick="addPreset()">Add Preset Option</button>
+            <input type="text" id="presetExt1" placeholder="Extreme 1">
+            <input type="text" id="presetExt2" placeholder="Extreme 2">
+            <button onclick="addPreset()">Add</button>
         </div>
-        
-        <div class="table-responsive">
-            <table>
-                <thead><tr><th>Extreme 1</th><th>Extreme 2</th><th>Action</th></tr></thead>
-                <tbody id="presetBody"></tbody>
-            </table>
-        </div>
-        <br>
-        <button class="btn-success btn-save-large" onclick="switchTab(6)">Continue to Generate & Export ➔</button>
+        <table style="width: 100%; max-width: 600px;"><tbody id="presetBody"></tbody></table>
+        <br><button class="btn-success btn-save-large" onclick="switchTab(6)">Continue to Generate & Export ➔</button>
     </div>
 
     <div id="tab6" class="tab-content">
-        
         <div id="previewSection">
             <h2>Generated Table Actions</h2>
             <div class="input-group">
-                <button class="btn-primary" onclick="startPopulating()">📝 Fill out Excel Rows in Browser</button>
-                <button class="btn-warning" onclick="document.getElementById('importExcelFile').click()">📂 Load Populated Excel</button>
-                <input type="file" id="importExcelFile" accept=".xlsx, .xls" style="display:none;" onchange="importExcel(event)">
-                <button class="btn-success" onclick="exportExcel()">⬇ Quick Export to Excel (.xlsx)</button>
-                <button class="btn-outline" onclick="generatePreview()">↻ Refresh Preview Grid</button>
-                <button class="btn-danger" onclick="clearPopulatedData()" id="btnClearData" style="display:none;">🗑️ Clear Populated Data</button>
+                <button class="btn-primary" onclick="startPopulating()">📝 Fill out Rows / Attach Images</button>
+                <button class="btn-success" onclick="exportZip()">📦 Export ZIP (Excel + Images)</button>
+                <button class="btn-outline" onclick="generatePreview()">↻ Refresh Grid</button>
+                <button class="btn-danger" onclick="clearPopulatedData()" id="btnClearData" style="display:none;">🗑️ Clear Data</button>
             </div>
-            
             <div class="table-responsive" style="margin-top: 20px;">
                 <table id="previewTable">
-                    <thead>
-                        <tr>
-                            <th>Interface</th>
-                            <th>Failure Mode</th>
-                            <th>Effect of Failure</th>
-                            <th>Potential Causes</th>
-                            <th>S</th><th>O</th><th>D</th><th>RPN</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Interface</th><th>Failure Mode</th><th>Effect</th><th>Cause</th><th>Mechanism</th><th>S</th><th>O</th><th>D</th><th>RPN</th><th>Images</th></tr></thead>
                     <tbody id="previewBody"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="populateSection" style="display:none;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>Populate DFMEA</h2>
-                <button class="btn-danger" onclick="exitPopulating()">Stop & Go Back</button>
-            </div>
-            
-            <p id="progressText" style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">Row 1 of 10 (10% Complete)</p>
-            <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
-
-            <div class="populate-card">
-                <div style="background: white; padding: 10px; border: 1px dashed var(--border); border-radius: 4px; margin-bottom: 20px;">
-                    <p style="margin: 0 0 5px 0;"><strong>Interface:</strong> <span id="popInterface"></span></p>
-                    <p style="margin: 0; color: #b91c1c;"><strong>Potential Cause:</strong> <span id="popCause"></span></p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn active" id="btnSubForm" onclick="switchSubTab('form')">📝 Form View</button>
+                    <button class="sub-tab-btn" id="btnSubIndex" onclick="switchSubTab('index')">📑 Row Index</button>
                 </div>
-
-                <div class="input-stacked">
-                    <label>Failure Mode</label>
-                    <input type="text" id="popMode" placeholder="What exactly failed? (e.g., breaks, warps, misaligns)" oninput="saveCurrentRowData()">
-                </div>
-                
-                <div class="input-stacked">
-                    <label>Effect of Failure</label>
-                    <input type="text" id="popEffect" placeholder="What is the impact? (e.g., user gets injured, product falls)" oninput="saveCurrentRowData()">
-                </div>
-
-                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                    <div class="input-stacked" style="flex: 1; min-width: 100px;">
-                        <label>Severity (1-10)</label>
-                        <input type="number" id="popSev" min="1" max="10" oninput="saveCurrentRowData()">
-                    </div>
-                    <div class="input-stacked" style="flex: 1; min-width: 100px;">
-                        <label>Occurrence (1-10)</label>
-                        <input type="number" id="popOcc" min="1" max="10" oninput="saveCurrentRowData()">
-                    </div>
-                    <div class="input-stacked" style="flex: 1; min-width: 100px;">
-                        <label>Detection (1-10)</label>
-                        <input type="number" id="popDet" min="1" max="10" oninput="saveCurrentRowData()">
-                    </div>
-                    <div style="flex: 1; min-width: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                        <label style="font-weight: 600; color: #0f172a; margin-bottom: 5px;">Calculated RPN</label>
-                        <div id="popRpn" class="rpn-box">-</div>
-                    </div>
-                </div>
-
-                <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <button class="btn-outline" onclick="navigatePopulate(-1)">⬅ Previous Row</button>
-                    <button class="btn-warning" onclick="duplicateCurrentRow()">+ Add Another Failure Mode for this Cause</button>
-                    <button class="btn-primary" onclick="navigatePopulate(1)" id="btnNextRow">Next Row ➔</button>
+                <div>
+                    <input type="number" id="jumpInput" placeholder="Row #" style="width: 80px; padding: 6px;">
+                    <button class="btn-info" onclick="jumpToRowInput()" style="padding: 6px 12px;">Jump</button>
+                    <button class="btn-danger" onclick="exitPopulating()" style="margin-left: 15px;">Stop & Go Back</button>
                 </div>
             </div>
             
-            <button class="btn-success btn-save-large" onclick="exportPopulatedExcel()" style="margin-top: 20px;">⬇ Finish & Export to Excel</button>
+            <div id="subTabForm" class="sub-tab-content active">
+                <p id="progressText" style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">Row 1 of X</p>
+                <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
+
+                <div class="populate-card">
+                    <div style="background: #f8fafc; padding: 12px; border: 1px dashed var(--border); border-radius: 4px; margin-bottom: 20px;">
+                        <p style="margin: 0 0 5px 0; font-size: 15px;"><strong>Interface:</strong> <span id="popInterface"></span></p>
+                        <p style="margin: 0; color: #b91c1c; font-size: 15px;"><strong>Cause:</strong> <span id="popCause"></span></p>
+                    </div>
+                    <div class="input-stacked"><label>Failure Mode</label><input type="text" id="popMode" oninput="saveCurrentRowData()"></div>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <div style="flex: 1;"><label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 5px;">Failure Mechanism</label><select id="popMechPreset" onchange="saveCurrentRowData()" style="width: 100%; padding: 8px;"></select></div>
+                        <div style="flex: 2;"><label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 5px;">Details</label><input type="text" id="popMechDetails" oninput="saveCurrentRowData()" style="width: 100%; padding: 8px;"></div>
+                    </div>
+                    <div class="input-stacked"><label>Effect of Failure</label><input type="text" id="popEffect" oninput="saveCurrentRowData()"></div>
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                        <div><label style="font-weight: 600; font-size: 14px;">Severity (S)</label><select id="popSev" class="sod-select" onchange="saveCurrentRowData()"></select></div>
+                        <div><label style="font-weight: 600; font-size: 14px;">Occurrence (O)</label><select id="popOcc" class="sod-select" onchange="saveCurrentRowData()"></select></div>
+                        <div><label style="font-weight: 600; font-size: 14px;">Detection (D)</label><select id="popDet" class="sod-select" onchange="saveCurrentRowData()"></select></div>
+                    </div>
+                    <div style="text-align: right; border-top: 1px solid #e2e8f0; padding-top: 15px; margin-bottom: 20px;">
+                        <span style="font-weight: 600; margin-right: 15px;">Calculated RPN:</span><div id="popRpn" class="rpn-box">-</div>
+                    </div>
+
+                    <div class="section-divider" style="margin: 20px 0;"></div>
+                    <h4>🖼️ Attached Images</h4>
+                    <div id="imageGallery"></div>
+                    <div class="paste-zone" id="pasteZone" tabindex="0" onclick="document.getElementById('fileInput').click()">
+                        Click here and press <strong>Ctrl+V</strong> to paste from clipboard, or click to upload a file.
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+
+                    <div style="margin-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <button class="btn-outline" onclick="navigatePopulate(-1)">⬅ Previous</button>
+                        <button class="btn-warning" onclick="duplicateCurrentRow()">+ Duplicate Row</button>
+                        <button class="btn-primary" onclick="navigatePopulate(1)" id="btnNextRow">Next ➔</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="subTabIndex" class="sub-tab-content">
+                <div class="populate-card" id="indexTreeContainer">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab7" class="tab-content">
+        <h2>Generate PDF Report</h2>
+        <p>Upload the <strong>.zip file</strong> you exported from Tab 6. This tool will automatically compile the Excel data and the attached images into a paginated, hyperlinked PDF.</p>
+        
+        <div class="pdf-drop-zone" onclick="document.getElementById('pdfZipInput').click()">
+            <h3 style="margin-bottom: 10px; color: #1e40af;">📂 Click here to select your DFMEA .zip export</h3>
+            <p style="margin: 0; color: #64748b;">It will read the Excel and Images folders automatically.</p>
+        </div>
+        <input type="file" id="pdfZipInput" accept=".zip" style="display:none;" onchange="handleZipUploadForPDF(event)">
+        
+        <div id="pdfStatus" style="display:none; background: #f0fdf4; border: 1px solid #86efac; padding: 15px; border-radius: 6px; margin-bottom: 20px; color: #166534;">
+            <strong>✅ ZIP Loaded Successfully!</strong> Found <span id="pdfRowCount">0</span> rows and <span id="pdfImgCount">0</span> images.
         </div>
 
+        <button class="btn-success btn-save-large" id="btnDownloadPDF" style="display:none;" onclick="generatePDFReport()">📄 Build & Download PDF Report</button>
     </div>
 
 </div>
 
 <script>
-    // ==========================================
-    // PRESETS
-    // ==========================================
-    let availablePresets = [
-        { ext1: 'too high', ext2: 'too low' },
-        { ext1: 'too large', ext2: 'too small' }
-    ];
+    // --- UI LOADING HELPER ---
+    function showLoading(text, percent) {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        document.getElementById('loadingText').innerText = text || 'Processing...';
+        let bar = document.getElementById('loadingBarWrapper');
+        if (percent !== undefined) {
+            bar.style.display = 'block';
+            document.getElementById('loadingBarFill').style.width = percent + '%';
+        } else {
+            bar.style.display = 'none';
+        }
+    }
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    // --- SOD Options ---
+    const sevOptions = [{val: "", text: "-- Select --"},{val: 10, text: "10 - Very High"},{val: 9, text: "9 - Very High"},{val: 8, text: "8 - High"},{val: 7, text: "7 - High"},{val: 6, text: "6 - Moderate"},{val: 5, text: "5 - Moderate"},{val: 4, text: "4 - Moderate"},{val: 3, text: "3 - Low"},{val: 2, text: "2 - Low"},{val: 1, text: "1 - Very Low"}];
+    const occOptions = [{val: "", text: "-- Select --"},{val: 10, text: "10 - Extremely High"},{val: 9, text: "9 - Very High"},{val: 8, text: "8 - Very High"},{val: 7, text: "7 - High"},{val: 6, text: "6 - High"},{val: 5, text: "5 - Moderate"},{val: 4, text: "4 - Moderate"},{val: 3, text: "3 - Low"},{val: 2, text: "2 - Very Low"},{val: 1, text: "1 - Extremely Low"}];
+    const detOptions = [{val: "", text: "-- Select --"},{val: 10, text: "10 - Very Low"},{val: 9, text: "9 - Very Low"},{val: 8, text: "8 - Low"},{val: 7, text: "7 - Moderate"},{val: 6, text: "6 - Moderate"},{val: 5, text: "5 - Moderate"},{val: 4, text: "4 - High"},{val: 3, text: "3 - High"},{val: 2, text: "2 - High"},{val: 1, text: "1 - Very High"}];
+
+    function populateSelects() {
+        ['popSev', 'popOcc', 'popDet'].forEach((id, idx) => {
+            const el = document.getElementById(id); el.innerHTML = '';
+            const opts = idx === 0 ? sevOptions : idx === 1 ? occOptions : detOptions;
+            opts.forEach(o => { let opt = document.createElement('option'); opt.value = o.val; opt.textContent = o.text; el.appendChild(opt); });
+        });
+    }
 
     // --- State Data ---
-    let components = [];
-    let featuresByComp = {}; 
-    let interfaces = {}; 
-    let dimsByFeature = {};  
+    let availablePresets = [{ ext1: 'too high', ext2: 'too low' }, { ext1: 'too large', ext2: 'too small' }];
+    let mechPresets = []; let imgDescPresets = []; 
+    let components = []; let featuresByComp = {}; let interfaces = {}; let dimsByFeature = {};  
+    let assignmentMode = 'global'; let globalDimAssignments = {}; let specificDimAssignments = {}; 
+    let finalTableData = []; let workingTableData = []; let populateIndex = 0;
     
-    // Assignment Mode logic
-    let assignmentMode = 'global'; 
-    let globalDimAssignments = {}; 
-    let specificDimAssignments = {}; 
+    // PDF State
+    let pdfGenerationData = { rows: [], imageMap: {} };
 
-    // Table Generation & Populate logic
-    let finalTableData = []; 
-    let workingTableData = []; 
-    let populateIndex = 0;
+    populateSelects();
 
     // --- Utility ---
-    function handleEnter(e, func) {
-        if (e.key === 'Enter') { e.preventDefault(); func(); }
-    }
-
+    function handleEnter(e, func) { if (e.key === 'Enter') { e.preventDefault(); func(); } }
     function switchTab(step) {
-        for (let i = 1; i <= 6; i++) {
-            document.getElementById(`tab${i}`).classList.remove('active');
-            document.getElementById(`btnTab${i}`).classList.remove('active');
-        }
-        document.getElementById(`tab${step}`).classList.add('active');
-        document.getElementById(`btnTab${step}`).classList.add('active');
-
-        if (step === 2) renderFeaturesTab();
-        if (step === 3) buildFeatureMatrix();
-        if (step === 4) renderDimensionsTab();
-        if (step === 5) renderSettingsTab();
-        if (step === 6) {
-            document.getElementById('previewSection').style.display = 'block';
-            document.getElementById('populateSection').style.display = 'none';
-            generatePreview();
-        }
+        for (let i = 1; i <= 7; i++) { document.getElementById(`tab${i}`).classList.remove('active'); document.getElementById(`btnTab${i}`).classList.remove('active'); }
+        document.getElementById(`tab${step}`).classList.add('active'); document.getElementById(`btnTab${step}`).classList.add('active');
+        if (step === 2) renderFeaturesTab(); if (step === 3) buildFeatureMatrix(); if (step === 4) renderDimensionsTab();
+        if (step === 5) { renderSettingsTab(); renderMechPresets(); renderImgDescPresets(); }
+        if (step === 6) { document.getElementById('previewSection').style.display = 'block'; document.getElementById('populateSection').style.display = 'none'; generatePreview(); }
+    }
+    
+    function switchSubTab(target) {
+        document.getElementById('btnSubForm').classList.remove('active'); document.getElementById('btnSubIndex').classList.remove('active');
+        document.getElementById('subTabForm').classList.remove('active'); document.getElementById('subTabIndex').classList.remove('active');
+        if(target === 'form') { document.getElementById('btnSubForm').classList.add('active'); document.getElementById('subTabForm').classList.add('active'); }
+        else { document.getElementById('btnSubIndex').classList.add('active'); document.getElementById('subTabIndex').classList.add('active'); renderGroupedRowRanges(); }
     }
 
-    // --- Data Export / Import (JSON) ---
+    // --- Session ---
     function exportSession() {
-        const sessionData = {
-            components, featuresByComp, interfaces, dimsByFeature, availablePresets,
-            assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData
-        };
+        const sessionData = { components, featuresByComp, interfaces, dimsByFeature, availablePresets, mechPresets, imgDescPresets, assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessionData));
-        const a = document.createElement('a');
-        a.href = dataStr; a.download = "dfmea_session.json";
-        document.body.appendChild(a); a.click(); a.remove();
+        const a = document.createElement('a'); a.href = dataStr; a.download = "dfmea_session.json"; document.body.appendChild(a); a.click(); a.remove();
     }
-
     function importSession(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
+        const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                components = data.components || [];
-                featuresByComp = data.featuresByComp || {};
-                interfaces = data.interfaces || {};
-                dimsByFeature = data.dimsByFeature || {};
-                availablePresets = data.availablePresets || availablePresets;
-                assignmentMode = data.assignmentMode || 'global';
-                globalDimAssignments = data.globalDimAssignments || {};
-                specificDimAssignments = data.specificDimAssignments || {};
+                components = data.components || []; featuresByComp = data.featuresByComp || {}; interfaces = data.interfaces || {}; dimsByFeature = data.dimsByFeature || {};
+                availablePresets = data.availablePresets || availablePresets; mechPresets = data.mechPresets || []; imgDescPresets = data.imgDescPresets || [];
+                assignmentMode = data.assignmentMode || 'global'; globalDimAssignments = data.globalDimAssignments || {}; specificDimAssignments = data.specificDimAssignments || {};
                 workingTableData = data.workingTableData || [];
                 
                 document.querySelector(`input[name="assignMode"][value="${assignmentMode}"]`).checked = true;
-                
-                harvestDimensions();
-                
-                renderComponents();
-                renderFeaturesTab();
-                buildFeatureMatrix();
-                renderDimensionsTab();
-                renderSettingsTab();
-
-                alert("Session loaded successfully!");
-                document.getElementById('importFile').value = ''; 
-            } catch (err) { alert("Error loading session. Make sure it's a valid JSON."); }
-        };
-        reader.readAsText(file);
+                harvestDimensions(); renderComponents(); renderSettingsTab(); renderMechPresets(); renderImgDescPresets();
+                alert("Session loaded successfully!"); document.getElementById('importFile').value = ''; 
+            } catch (err) { alert("Error loading session."); }
+        }; reader.readAsText(file);
     }
 
-    // --- Data Harvesting Logic ---
-    function harvestDimensions() {
-        let currentGlobals = new Set();
-        let currentSpecifics = new Set();
-
-        Object.keys(dimsByFeature).forEach(key => { 
-            let dims = dimsByFeature[key] || [];
-            dims.forEach(d => {
-                currentGlobals.add(d);
-                currentSpecifics.add(`${key}|${d}`);
-            });
-        });
-
-        let defaultPresetStr = availablePresets.length > 0 ? `${availablePresets[0].ext1}|${availablePresets[0].ext2}` : "too high|too low";
-        
-        currentGlobals.forEach(d => { if (!globalDimAssignments[d]) globalDimAssignments[d] = defaultPresetStr; });
-        currentSpecifics.forEach(k => { if (!specificDimAssignments[k]) specificDimAssignments[k] = defaultPresetStr; });
-
-        Object.keys(globalDimAssignments).forEach(d => { if (!currentGlobals.has(d)) delete globalDimAssignments[d]; });
-        Object.keys(specificDimAssignments).forEach(k => { if (!currentSpecifics.has(k)) delete specificDimAssignments[k]; });
-    }
-
-    // --- STEP 1: Components ---
+    // --- Steps 1-4 ---
     function addComponent() {
-        const input = document.getElementById('compInput');
-        const vals = input.value.split(',').map(v => v.trim()).filter(v => v);
-        vals.forEach(val => {
-            if (!components.includes(val)) {
-                components.push(val);
-                if (!featuresByComp[val]) featuresByComp[val] = [];
-            }
+        document.getElementById('compInput').value.split(',').map(v => v.trim()).filter(v => v).forEach(val => {
+            if (!components.includes(val)) { components.push(val); if (!featuresByComp[val]) featuresByComp[val] = []; }
         });
-        input.value = ''; renderComponents();
+        document.getElementById('compInput').value = ''; renderComponents();
     }
-
-    function removeComponent(comp) {
-        components = components.filter(c => c !== comp);
-        delete featuresByComp[comp];
-        cleanUpOrphanedData(); renderComponents();
-    }
-
+    function removeComponent(c) { components = components.filter(x => x !== c); delete featuresByComp[c]; renderComponents(); }
     function renderComponents() {
         const list = document.getElementById('compList'); list.innerHTML = '';
-        components.forEach(c => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${c}</span> <button class="btn-danger" onclick="removeComponent('${c}')">Remove</button>`;
-            list.appendChild(li);
-        });
+        components.forEach(c => { list.innerHTML += `<li><span>${c}</span> <button class="btn-danger" onclick="removeComponent('${c}')">Remove</button></li>`; });
     }
-
-    // --- STEP 2: Features ---
+    
     function renderFeaturesTab() {
-        const container = document.getElementById('featuresContainer');
-        const btnSave = document.getElementById('btnSaveFeatures');
-        if (components.length === 0) {
-            container.innerHTML = '<p><em>Please add components in Tab 1 first.</em></p>'; btnSave.style.display = 'none'; return;
-        }
         let html = '';
-        components.forEach((comp, idx) => {
-            let existingFeats = (featuresByComp[comp] || []).join(', ');
-            html += `<div class="input-group input-stacked"><label>${comp}</label><input type="text" id="input_feat_${idx}" value="${existingFeats}"></div>`;
-        });
-        container.innerHTML = html; btnSave.style.display = 'block';
+        components.forEach((c, i) => { html += `<div class="input-stacked"><label>${c}</label><input type="text" id="feat_${i}" value="${(featuresByComp[c]||[]).join(', ')}"></div>`; });
+        document.getElementById('featuresContainer').innerHTML = html || '<em>Add components first</em>'; document.getElementById('btnSaveFeatures').style.display = components.length ? 'block' : 'none';
     }
-
-    function saveAllFeatures() {
-        components.forEach((comp, idx) => {
-            let inputVal = document.getElementById(`input_feat_${idx}`).value;
-            featuresByComp[comp] = inputVal.split(',').map(f => f.trim()).filter(f => f);
-        });
-        cleanUpOrphanedData(); switchTab(3);
-    }
-
-    function cleanUpOrphanedData() {
-        Object.keys(interfaces).forEach(key => {
-            let parts = key.split('::');
-            let keep = parts.every(p => { let [c, f] = p.split('|'); return featuresByComp[c] && featuresByComp[c].includes(f); });
-            if (!keep) delete interfaces[key];
-        });
-        Object.keys(dimsByFeature).forEach(key => {
-            let [c, f] = key.split('|');
-            if (!featuresByComp[c] || !featuresByComp[c].includes(f)) delete dimsByFeature[key];
-        });
-    }
-
-    // --- STEP 3: Matrix ---
-    function getFeaturePairKey(c1, f1, c2, f2) { return [`${c1}|${f1}`, `${c2}|${f2}`].sort().join('::'); }
+    function saveAllFeatures() { components.forEach((c, i) => { featuresByComp[c] = document.getElementById(`feat_${i}`).value.split(',').map(f => f.trim()).filter(f => f); }); switchTab(3); }
 
     function buildFeatureMatrix() {
-        const container = document.getElementById('matrixContainer');
-        const btnContinue = document.getElementById('btnContinueFromMatrix');
-        let allFeats = [];
-        components.forEach(c => { (featuresByComp[c] || []).forEach(f => allFeats.push({comp: c, feat: f})); });
-        
-        if (allFeats.length < 2) { container.innerHTML = '<p><em>Not enough features to map.</em></p>'; btnContinue.style.display = 'none'; return; }
-
+        let allFeats = []; components.forEach(c => { (featuresByComp[c]||[]).forEach(f => allFeats.push({c, f})); });
+        if(allFeats.length < 2) return;
         let html = '<table><thead><tr><th></th>';
-        allFeats.forEach(obj => { html += `<th>${obj.comp}<br><small style="color:#64748b;">${obj.feat}</small></th>`; });
-        html += '</tr></thead><tbody>';
-
-        for (let i = 0; i < allFeats.length; i++) {
-            html += `<tr><td>${allFeats[i].comp}<br><small style="font-weight:normal; color:#64748b;">${allFeats[i].feat}</small></td>`;
-            for (let j = 0; j < allFeats.length; j++) {
-                if (allFeats[i].comp === allFeats[j].comp) {
-                    html += '<td class="diagonal">N/A</td>';
-                } else {
-                    let key = getFeaturePairKey(allFeats[i].comp, allFeats[i].feat, allFeats[j].comp, allFeats[j].feat);
+        allFeats.forEach(o => { html += `<th>${o.c}<br><small>${o.f}</small></th>`; }); html += '</tr></thead><tbody>';
+        for (let i=0; i<allFeats.length; i++) {
+            html += `<tr><td>${allFeats[i].c}<br><small>${allFeats[i].f}</small></td>`;
+            for (let j=0; j<allFeats.length; j++) {
+                if (allFeats[i].c === allFeats[j].c) html += '<td class="diagonal">N/A</td>';
+                else {
+                    let key = [`${allFeats[i].c}|${allFeats[i].f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
                     if (interfaces[key] === undefined) interfaces[key] = true;
-                    let checked = interfaces[key] ? 'checked' : '';
-                    html += `<td><input type="checkbox" id="chk_feat_${i}_${j}" ${checked} onchange="syncFeatCheckbox(${i}, ${j}, '${key}')"></td>`;
+                    html += `<td><input type="checkbox" id="chk_${i}_${j}" ${interfaces[key]?'checked':''} onchange="syncFeat(${i},${j},'${key}')"></td>`;
                 }
-            }
-            html += '</tr>';
+            } html += '</tr>';
         }
-        html += '</tbody></table>'; container.innerHTML = html; btnContinue.style.display = 'block';
+        document.getElementById('matrixContainer').innerHTML = html + '</tbody></table>'; document.getElementById('btnContinueFromMatrix').style.display = 'block';
     }
-    function syncFeatCheckbox(i, j, pairKey) {
-        const isChecked = document.getElementById(`chk_feat_${i}_${j}`).checked;
-        document.getElementById(`chk_feat_${j}_${i}`).checked = isChecked;
-        interfaces[pairKey] = isChecked;
-    }
+    function syncFeat(i, j, k) { let v = document.getElementById(`chk_${i}_${j}`).checked; document.getElementById(`chk_${j}_${i}`).checked = v; interfaces[k] = v; }
 
-    // --- STEP 4: Dimensions ---
     function renderDimensionsTab() {
-        const container = document.getElementById('dimensionsContainer');
-        const btnSave = document.getElementById('btnSaveDimensions');
-        let html = ''; let hasFeatures = false;
-
-        components.forEach((comp) => {
-            let feats = featuresByComp[comp] || [];
-            if (feats.length > 0) {
-                hasFeatures = true; html += `<h3>${comp}</h3>`;
-                feats.forEach((feat) => {
-                    let key = `${comp}|${feat}`;
-                    let existingDims = (dimsByFeature[key] || []).join(', ');
-                    html += `<div class="input-group input-stacked" style="margin-left: 20px;"><label>${feat}</label><input type="text" class="dim-input" data-key="${key}" value="${existingDims}" placeholder="e.g. height, width"></div>`;
+        let html = '';
+        components.forEach(c => {
+            if (featuresByComp[c] && featuresByComp[c].length) {
+                html += `<h3>${c}</h3>`;
+                featuresByComp[c].forEach(f => {
+                    let key = `${c}|${f}`; let dims = (dimsByFeature[key]||[]).join(', ');
+                    html += `<div class="input-stacked"><label>${f}</label><input class="dim-input" data-key="${key}" value="${dims}"></div>`;
                 });
             }
         });
-        if (!hasFeatures) { container.innerHTML = '<p><em>No features found.</em></p>'; btnSave.style.display = 'none'; } 
-        else { container.innerHTML = html; btnSave.style.display = 'block'; }
+        document.getElementById('dimensionsContainer').innerHTML = html; document.getElementById('btnSaveDimensions').style.display = html ? 'block' : 'none';
     }
+    function saveAllDimensions() { document.querySelectorAll('.dim-input').forEach(inp => { dimsByFeature[inp.getAttribute('data-key')] = inp.value.split(',').map(d => d.trim().toLowerCase()).filter(d => d); }); harvestDimensions(); switchTab(5); }
 
-    function saveAllDimensions() {
-        let inputs = document.querySelectorAll('.dim-input');
-        
-        inputs.forEach(input => {
-            let key = input.getAttribute('data-key');
-            let dims = input.value.split(',').map(d => d.trim().toLowerCase()).filter(d => d);
-            dimsByFeature[key] = dims;
-        });
-
-        harvestDimensions();
-        switchTab(5);
+    // --- Settings ---
+    function harvestDimensions() {
+        let cg = new Set(), cs = new Set();
+        Object.keys(dimsByFeature).forEach(k => { (dimsByFeature[k]||[]).forEach(d => { cg.add(d); cs.add(`${k}|${d}`); }); });
+        let def = availablePresets.length ? `${availablePresets[0].ext1}|${availablePresets[0].ext2}` : "too high|too low";
+        cg.forEach(d => { if (!globalDimAssignments[d]) globalDimAssignments[d] = def; }); cs.forEach(k => { if (!specificDimAssignments[k]) specificDimAssignments[k] = def; });
     }
-
-    // --- STEP 5: Settings / Presets ---
     function toggleAssignMode() {
-        let oldMode = assignmentMode;
-        assignmentMode = document.querySelector('input[name="assignMode"]:checked').value;
-        
-        // Push Global states down to Specific states when switching
-        if (oldMode === 'global' && assignmentMode === 'specific') {
-            Object.keys(specificDimAssignments).forEach(key => {
-                let dim = key.split('|')[2]; // Extracts the dimension part from "Comp|Feat|Dim"
-                if (globalDimAssignments[dim]) {
-                    specificDimAssignments[key] = globalDimAssignments[dim];
-                }
-            });
-        }
-        
-        renderAssignmentsTable();
+        let old = assignmentMode; assignmentMode = document.querySelector('input[name="assignMode"]:checked').value;
+        if(old === 'global' && assignmentMode === 'specific') { Object.keys(specificDimAssignments).forEach(k => { let d = k.split('|')[2]; if (globalDimAssignments[d]) specificDimAssignments[k] = globalDimAssignments[d]; }); }
+        renderSettingsTab();
     }
-
     function renderSettingsTab() {
-        renderAvailablePresets();
-        renderAssignmentsTable();
-    }
-
-    function renderAvailablePresets() {
-        const tbody = document.getElementById('presetBody'); tbody.innerHTML = '';
-        availablePresets.forEach((preset, idx) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${preset.ext1}</td><td>${preset.ext2}</td><td><button class="btn-danger" onclick="removePreset(${idx})">Remove</button></td>`;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function renderAssignmentsTable() {
-        const container = document.getElementById('assignmentsContainer'); container.innerHTML = '';
-        
-        let optionsHtml = '';
-        availablePresets.forEach(p => { optionsHtml += `<option value="${p.ext1}|${p.ext2}">${p.ext1} / ${p.ext2}</option>`; });
-
+        let html = ''; let opts = availablePresets.map(p => `<option value="${p.ext1}|${p.ext2}">${p.ext1} / ${p.ext2}</option>`).join('');
         if (assignmentMode === 'global') {
-            let uniqueDims = Object.keys(globalDimAssignments).sort();
-            if (uniqueDims.length === 0) return container.innerHTML = '<p><em>No dimensions found. Please input them on Tab 4 and save.</em></p>';
-            
-            uniqueDims.forEach(dim => {
-                let row = document.createElement('div'); row.className = 'dim-assignment-row';
-                let displayDim = dim.charAt(0).toUpperCase() + dim.slice(1);
-                row.innerHTML = `<strong>${displayDim}</strong><select onchange="updateAssignment('global', '${dim}', this.value)">${optionsHtml}</select>`;
-                container.appendChild(row);
-                row.querySelector('select').value = globalDimAssignments[dim];
-            });
+            Object.keys(globalDimAssignments).sort().forEach(d => { html += `<div class="dim-assignment-row"><strong>${d}</strong><select onchange="updateAssign('global','${d}',this.value)">${opts}</select></div>`; });
         } else {
-            let specificKeys = Object.keys(specificDimAssignments).sort();
-            if (specificKeys.length === 0) return container.innerHTML = '<p><em>No dimensions found. Please input them on Tab 4 and save.</em></p>';
-            
-            specificKeys.forEach(key => {
-                let [comp, feat, dim] = key.split('|');
-                let row = document.createElement('div'); row.className = 'dim-assignment-row';
-                row.innerHTML = `<span><strong>${comp}</strong> ➔ ${feat} ➔ <em>${dim}</em></span><select onchange="updateAssignment('specific', '${key}', this.value)">${optionsHtml}</select>`;
-                container.appendChild(row);
-                row.querySelector('select').value = specificDimAssignments[key];
-            });
+            Object.keys(specificDimAssignments).sort().forEach(k => { let [c, f, d] = k.split('|'); html += `<div class="dim-assignment-row"><span><strong>${c}</strong> ➔ ${f} ➔ <em>${d}</em></span><select onchange="updateAssign('specific','${k}',this.value)">${opts}</select></div>`; });
         }
+        document.getElementById('assignmentsContainer').innerHTML = html || '<em>No dims found.</em>';
+        setTimeout(() => { 
+            if(assignmentMode==='global') Object.keys(globalDimAssignments).forEach((d,i) => document.querySelectorAll('#assignmentsContainer select')[i].value = globalDimAssignments[d]);
+            else Object.keys(specificDimAssignments).forEach((k,i) => document.querySelectorAll('#assignmentsContainer select')[i].value = specificDimAssignments[k]);
+        }, 10);
+        document.getElementById('presetBody').innerHTML = availablePresets.map((p,i) => `<tr><td>${p.ext1}</td><td>${p.ext2}</td><td><button class="btn-danger" onclick="remPreset(${i})">Remove</button></td></tr>`).join('');
     }
+    function updateAssign(m, k, v) { if (m === 'global') globalDimAssignments[k] = v; else specificDimAssignments[k] = v; }
+    function addPreset() { let e1 = document.getElementById('presetExt1').value.trim(), e2 = document.getElementById('presetExt2').value.trim(); if(!e1||!e2) return; availablePresets.push({ext1:e1, ext2:e2}); document.getElementById('presetExt1').value=''; document.getElementById('presetExt2').value=''; harvestDimensions(); renderSettingsTab(); }
+    function remPreset(i) { let r = `${availablePresets[i].ext1}|${availablePresets[i].ext2}`; availablePresets.splice(i,1); harvestDimensions(); renderSettingsTab(); }
 
-    function updateAssignment(mode, key, presetStr) {
-        if (mode === 'global') globalDimAssignments[key] = presetStr;
-        else specificDimAssignments[key] = presetStr;
-    }
-    
-    function addPreset() {
-        const ext1 = document.getElementById('presetExt1').value.trim();
-        const ext2 = document.getElementById('presetExt2').value.trim();
-        if (!ext1 || !ext2) return alert("Fill both fields.");
-        availablePresets.push({ ext1, ext2 });
-        document.getElementById('presetExt1').value = ''; document.getElementById('presetExt2').value = '';
-        
-        harvestDimensions();
-        renderSettingsTab();
-    }
-    
-    function removePreset(index) {
-        let removedPresetStr = `${availablePresets[index].ext1}|${availablePresets[index].ext2}`;
-        availablePresets.splice(index, 1);
-        let fallback = availablePresets.length > 0 ? `${availablePresets[0].ext1}|${availablePresets[0].ext2}` : "too high|too low";
-        
-        Object.keys(globalDimAssignments).forEach(d => { if (globalDimAssignments[d] === removedPresetStr) globalDimAssignments[d] = fallback; });
-        Object.keys(specificDimAssignments).forEach(k => { if (specificDimAssignments[k] === removedPresetStr) specificDimAssignments[k] = fallback; });
-        renderSettingsTab();
-    }
+    function addMechPreset() { document.getElementById('mechInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!mechPresets.includes(v)) mechPresets.push(v); }); document.getElementById('mechInput').value=''; renderMechPresets(); }
+    function remMechPreset(i) { mechPresets.splice(i, 1); renderMechPresets(); }
+    function renderMechPresets() { document.getElementById('mechList').innerHTML = mechPresets.map((m,i) => `<li>${m} <button class="btn-danger" onclick="remMechPreset(${i})">X</button></li>`).join(''); }
 
-    function getExtremes(comp, feat, dim) {
-        let d = dim.toLowerCase();
-        let presetStr = assignmentMode === 'global' ? globalDimAssignments[d] : specificDimAssignments[`${comp}|${feat}|${d}`];
-        if (!presetStr && availablePresets.length > 0) presetStr = `${availablePresets[0].ext1}|${availablePresets[0].ext2}`;
-        return presetStr ? presetStr.split('|') : ['too high', 'too low'];
-    }
+    function addImgDescPreset() { document.getElementById('imgDescInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!imgDescPresets.includes(v)) imgDescPresets.push(v); }); document.getElementById('imgDescInput').value=''; renderImgDescPresets(); }
+    function remImgDescPreset(i) { imgDescPresets.splice(i, 1); renderImgDescPresets(); }
+    function renderImgDescPresets() { document.getElementById('imgDescList').innerHTML = imgDescPresets.map((m,i) => `<li>${m} <button class="btn-danger" onclick="remImgDescPreset(${i})">X</button></li>`).join(''); }
 
-    // --- STEP 6: Generate Base Data ---
+    // --- Generate ---
+    function getExtremes(c, f, d) { let val = assignmentMode === 'global' ? globalDimAssignments[d] : specificDimAssignments[`${c}|${f}|${d}`]; return val ? val.split('|') : ['too high', 'too low']; }
     function generateData() {
-        finalTableData = [];
-        finalTableData.push(["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Severity", "Occurrence", "Detection", "RPN"]);
-
-        components.forEach(c1 => {
-            components.forEach(c2 => {
-                if (c1 === c2) return; 
-                let c1Feats = featuresByComp[c1] || [];
-                let c2Feats = featuresByComp[c2] || [];
-
-                c1Feats.forEach(f1 => {
-                    c2Feats.forEach(f2 => {
-                        let pairKey = getFeaturePairKey(c1, f1, c2, f2);
-                        if (interfaces[pairKey]) {
-                            let interfaceStr = `${c1} (${f1}) - ${c2} (${f2})`;
-                            let causesFound = false;
-                            let dims = dimsByFeature[`${c1}|${f1}`] || [];
-                            
-                            dims.forEach(dim => {
-                                let extremes = getExtremes(c1, f1, dim);
-                                extremes.forEach(ext => {
-                                    let causeString = `${c1} ${f1} ${dim} ${ext}`;
-                                    finalTableData.push([interfaceStr, "", "", causeString, "", "", "", ""]);
-                                    causesFound = true;
-                                });
-                            });
-                            if (!causesFound) finalTableData.push([interfaceStr, "", "", "", "", "", "", ""]);
-                        }
+        finalTableData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN", "Images"]];
+        components.forEach(c1 => { components.forEach(c2 => {
+            if(c1===c2) return;
+            (featuresByComp[c1]||[]).forEach(f1 => { (featuresByComp[c2]||[]).forEach(f2 => {
+                let p = [`${c1}|${f1}`, `${c2}|${f2}`].sort().join('::');
+                if(interfaces[p]) {
+                    let ifaceStr = `${c1} (${f1}) - ${c2} (${f2})`; let causes = false;
+                    (dimsByFeature[`${c1}|${f1}`]||[]).forEach(d => {
+                        getExtremes(c1,f1,d).forEach(ext => { finalTableData.push([ifaceStr, "", "", `${c1} ${f1} ${d} ${ext}`, "", "", "", "", "", ""]); causes=true; });
                     });
-                });
-            });
-        });
+                    if(!causes) finalTableData.push([ifaceStr, "", "", "", "", "", "", "", "", ""]);
+                }
+            })});
+        })});
     }
 
     function generatePreview() {
-        const tbody = document.getElementById('previewBody'); 
-        tbody.innerHTML = '';
-        const btnClear = document.getElementById('btnClearData');
-
-        // 1. Show Populated Data if it exists
+        const tb = document.getElementById('previewBody'); tb.innerHTML = '';
         if (workingTableData && workingTableData.length > 0) {
-            if (btnClear) btnClear.style.display = 'inline-block';
-            
-            workingTableData.forEach(row => {
-                let tr = document.createElement('tr');
-                let cells = [row.interface, row.mode, row.effect, row.cause, row.sev, row.occ, row.det, row.rpn];
-                
-                cells.forEach((cell, index) => {
-                    let td = document.createElement('td');
-                    if (index === 0) td.innerHTML = `<strong>${cell || ''}</strong>`; 
-                    else td.textContent = cell || '';
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
+            document.getElementById('btnClearData').style.display = 'inline-block';
+            workingTableData.forEach((r) => {
+                let mechStr = r.mechPreset ? (r.mechDetails ? `${r.mechPreset} - ${r.mechDetails}` : r.mechPreset) : (r.mechDetails || "");
+                let imgCount = r.images ? r.images.length : 0;
+                tb.innerHTML += `<tr><td><strong>${r.interface}</strong></td><td>${r.mode}</td><td>${r.effect}</td><td>${r.cause}</td><td>${mechStr}</td><td>${r.sev}</td><td>${r.occ}</td><td>${r.det}</td><td>${r.rpn}</td><td>${imgCount > 0 ? imgCount + ' img' : ''}</td></tr>`;
             });
-            return;
-        }
-
-        // 2. Otherwise, fallback to the blank generated template
-        if (btnClear) btnClear.style.display = 'none';
-        generateData();
-        
-        if (finalTableData.length <= 1) { 
-            tbody.innerHTML = '<tr><td colspan="8">No active interfaces mapped yet.</td></tr>'; 
-            return; 
-        }
-
-        for (let i = 1; i < finalTableData.length; i++) {
-            let tr = document.createElement('tr');
-            finalTableData[i].forEach((cell, index) => {
-                let td = document.createElement('td');
-                if (index === 0) td.innerHTML = `<strong>${cell}</strong>`; 
-                else td.textContent = cell;
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
+        } else {
+            document.getElementById('btnClearData').style.display = 'none'; generateData();
+            if(finalTableData.length <= 1) tb.innerHTML = '<tr><td colspan="10">Empty.</td></tr>';
+            else { for(let i=1; i<finalTableData.length; i++) { let r=finalTableData[i]; tb.innerHTML += `<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td></td></tr>`; } }
         }
     }
+    function clearPopulatedData() { if(confirm("Clear populated data?")) { workingTableData = []; generatePreview(); } }
 
-    function clearPopulatedData() {
-        if(confirm("Are you sure you want to clear your populated data? This will revert the grid back to your auto-generated blank template.")) {
-            workingTableData = [];
-            generatePreview();
-        }
-    }
-
-    // --- POPULATE IN HTML MODE & EXCEL IMPORT ---
-    
-    // Import from Populated Excel
-    function importExcel(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                
-                if (json.length > 1) {
-                    workingTableData = json.slice(1).map(row => ({
-                        interface: row[0] || "",
-                        mode: row[1] || "",
-                        effect: row[2] || "",
-                        cause: row[3] || "",
-                        sev: row[4] || "",
-                        occ: row[5] || "",
-                        det: row[6] || "",
-                        rpn: row[7] || ""
-                    }));
-                    
-                    populateIndex = 0;
-                    document.getElementById('previewSection').style.display = 'block';
-                    document.getElementById('populateSection').style.display = 'none';
-                    generatePreview(); // Automatically show the loaded data in the preview grid
-                    alert("Populated Excel file loaded successfully!");
-                } else {
-                    alert("Excel file seems empty or invalid.");
-                }
-            } catch (err) {
-                alert("Error parsing Excel file. Ensure it is the exported DFMEA format.");
-                console.error(err);
-            } finally {
-                document.getElementById('importExcelFile').value = '';
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
+    // --- Populate & Hierarchy Indexing ---
     function startPopulating() {
-        // If we don't have working data yet, generate the base template to start
         if (!workingTableData || workingTableData.length === 0) {
-            generateData();
-            if (finalTableData.length <= 1) return alert("Nothing to populate. Please define parts and dimensions.");
-            
-            workingTableData = finalTableData.slice(1).map(row => ({
-                interface: row[0], mode: row[1], effect: row[2], cause: row[3],
-                sev: row[4], occ: row[5], det: row[6], rpn: row[7]
-            }));
+            generateData(); if(finalTableData.length<=1) return alert("Nothing to populate.");
+            workingTableData = finalTableData.slice(1).map(r => ({ interface: r[0], mode: r[1], effect: r[2], cause: r[3], mechPreset: '', mechDetails: '', sev: r[5], occ: r[6], det: r[7], rpn: r[8], images: [] }));
         }
-        
-        // Start populate flow at row 0
-        populateIndex = 0;
-        document.getElementById('previewSection').style.display = 'none';
-        document.getElementById('populateSection').style.display = 'block';
-        renderPopulateStep();
+        populateIndex = 0; document.getElementById('previewSection').style.display='none'; document.getElementById('populateSection').style.display='block';
+        switchSubTab('form'); renderPopulateStep();
     }
+    function exitPopulating() { saveCurrentRowData(); document.getElementById('previewSection').style.display='block'; document.getElementById('populateSection').style.display='none'; generatePreview(); }
 
-    function exitPopulating() {
-        saveCurrentRowData();
-        document.getElementById('previewSection').style.display = 'block';
-        document.getElementById('populateSection').style.display = 'none';
-        generatePreview(); // Refresh the grid to show new changes made while populating
+    function renderGroupedRowRanges() {
+        let tree = {};
+        let currentInterface = null; let startIdx = 0;
+        let groups = [];
+        
+        workingTableData.forEach((r, i) => {
+            if (r.interface !== currentInterface) {
+                if (currentInterface !== null) groups.push({ interface: currentInterface, start: startIdx, end: i - 1 });
+                currentInterface = r.interface; startIdx = i;
+            }
+        });
+        if (currentInterface !== null) groups.push({ interface: currentInterface, start: startIdx, end: workingTableData.length - 1 });
+
+        groups.forEach(g => {
+            let match = g.interface.match(/(.+) \((.+)\) - (.+ \(.+\))/);
+            if (match) {
+                let c1 = match[1]; let f1 = match[2]; let target = match[3];
+                if (!tree[c1]) tree[c1] = {};
+                if (!tree[c1][f1]) tree[c1][f1] = [];
+                tree[c1][f1].push({ target: target, start: g.start, end: g.end });
+            } else {
+                if (!tree["Other"]) tree["Other"] = {};
+                if (!tree["Other"]["-"]) tree["Other"]["-"] = [];
+                tree["Other"]["-"].push({ target: g.interface, start: g.start, end: g.end });
+            }
+        });
+
+        let html = '';
+        for (let comp in tree) {
+            html += `<div class="comp-group"><div class="comp-title">${comp}</div>`;
+            for (let feat in tree[comp]) {
+                html += `<div class="feat-group"><div class="feat-title">${feat}</div><div class="range-grid">`;
+                tree[comp][feat].forEach(item => {
+                    html += `
+                        <button class="range-btn" onclick="jumpToRow(${item.start}); switchSubTab('form')">
+                            <span class="range-target">vs. ${item.target}</span>
+                            <span class="range-badge">Rows ${item.start+1}-${item.end+1}</span>
+                        </button>
+                    `;
+                });
+                html += `</div></div>`;
+            }
+            html += `</div>`;
+        }
+        document.getElementById('indexTreeContainer').innerHTML = html;
     }
+    
+    function jumpToRow(idx) { saveCurrentRowData(); populateIndex = idx; renderPopulateStep(); }
+    function jumpToRowInput() { let val = parseInt(document.getElementById('jumpInput').value); if(val>0 && val<=workingTableData.length) jumpToRow(val-1); document.getElementById('jumpInput').value=''; }
 
     function renderPopulateStep() {
-        let row = workingTableData[populateIndex];
-        let total = workingTableData.length;
-        let perc = Math.round(((populateIndex + 1) / total) * 100);
-
-        document.getElementById('progressText').innerText = `Row ${populateIndex + 1} of ${total} (${perc}% Complete)`;
-        document.getElementById('progressBar').style.width = `${perc}%`;
-
-        document.getElementById('popInterface').innerText = row.interface || "N/A";
-        document.getElementById('popCause').innerText = row.cause || "No cause mapped (Blank)";
+        let r = workingTableData[populateIndex]; let t = workingTableData.length; let p = Math.round(((populateIndex+1)/t)*100);
+        document.getElementById('progressText').innerText = `Row ${populateIndex+1} of ${t} (${p}% Complete)`; document.getElementById('progressBar').style.width = `${p}%`;
+        document.getElementById('popInterface').innerText = r.interface || "N/A"; document.getElementById('popCause').innerText = r.cause || "N/A";
         
-        document.getElementById('popMode').value = row.mode || "";
-        document.getElementById('popEffect').value = row.effect || "";
-        document.getElementById('popSev').value = row.sev || "";
-        document.getElementById('popOcc').value = row.occ || "";
-        document.getElementById('popDet').value = row.det || "";
+        document.getElementById('popMode').value = r.mode || ""; document.getElementById('popEffect').value = r.effect || "";
+        document.getElementById('popSev').value = r.sev || ""; document.getElementById('popOcc').value = r.occ || ""; document.getElementById('popDet').value = r.det || "";
+        document.getElementById('popMechDetails').value = r.mechDetails || "";
         
-        updateRPNDisplay(row);
+        let mechSel = document.getElementById('popMechPreset'); mechSel.innerHTML = '<option value="">-- No Preset --</option>' + mechPresets.map(m => `<option value="${m}">${m}</option>`).join('');
+        mechSel.value = r.mechPreset || "";
 
-        document.getElementById('btnNextRow').innerText = (populateIndex === total - 1) ? "Save Current ➔" : "Next Row ➔";
+        updateRPNDisplay(r);
+        document.getElementById('btnNextRow').innerText = (populateIndex === t - 1) ? "Save Current ➔" : "Next Row ➔";
+        renderImageGallery();
     }
 
     function saveCurrentRowData() {
-        if (!workingTableData || workingTableData.length === 0) return;
-        
-        let row = workingTableData[populateIndex];
-        row.mode = document.getElementById('popMode').value;
-        row.effect = document.getElementById('popEffect').value;
-        row.sev = document.getElementById('popSev').value;
-        row.occ = document.getElementById('popOcc').value;
-        row.det = document.getElementById('popDet').value;
-        
-        let s = parseInt(row.sev), o = parseInt(row.occ), d = parseInt(row.det);
-        if (!isNaN(s) && !isNaN(o) && !isNaN(d)) {
-            row.rpn = s * o * d;
-        } else {
-            row.rpn = "";
+        if (!workingTableData.length) return; let r = workingTableData[populateIndex];
+        r.mode = document.getElementById('popMode').value; r.effect = document.getElementById('popEffect').value;
+        r.mechPreset = document.getElementById('popMechPreset').value; r.mechDetails = document.getElementById('popMechDetails').value;
+        r.sev = document.getElementById('popSev').value; r.occ = document.getElementById('popOcc').value; r.det = document.getElementById('popDet').value;
+        let s = parseInt(r.sev), o = parseInt(r.occ), d = parseInt(r.det); r.rpn = (!isNaN(s) && !isNaN(o) && !isNaN(d)) ? (s*o*d) : ""; updateRPNDisplay(r);
+        if(r.images) { r.images.forEach((img, i) => { let p = document.getElementById(`imgPre_${i}`); let d = document.getElementById(`imgDet_${i}`); if(p) img.descPreset = p.value; if(d) img.descDetails = d.value; }); }
+    }
+
+    function updateRPNDisplay(r) {
+        let b = document.getElementById('popRpn'); b.innerText = r.rpn || "-";
+        b.style.color = r.rpn >= 100 ? "#ef4444" : r.rpn >= 50 ? "#f59e0b" : "#0f172a"; b.style.borderColor = r.rpn >= 100 ? "#ef4444" : r.rpn >= 50 ? "#f59e0b" : "var(--border)";
+    }
+
+    function navigatePopulate(dir) { saveCurrentRowData(); let n = populateIndex + dir; if(n>=0 && n<workingTableData.length) { populateIndex = n; renderPopulateStep(); } }
+    function duplicateCurrentRow() { saveCurrentRowData(); let c = workingTableData[populateIndex]; workingTableData.splice(populateIndex+1, 0, { ...c, mode:'', effect:'', sev:'', occ:'', det:'', rpn:'', mechPreset:'', mechDetails:'', images:[] }); populateIndex++; renderPopulateStep(); }
+
+    // --- Images ---
+    document.addEventListener("paste", function(e) {
+        if (document.getElementById('populateSection').style.display === 'block' && document.getElementById('subTabForm').classList.contains('active')) {
+            let items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") !== -1) {
+                    let blob = items[i].getAsFile(); let reader = new FileReader();
+                    reader.onload = function(event) { addImageToRow(event.target.result); }; reader.readAsDataURL(blob);
+                }
+            }
         }
-        updateRPNDisplay(row);
-    }
+    });
 
-    function updateRPNDisplay(row) {
-        let box = document.getElementById('popRpn');
-        box.innerText = row.rpn !== "" ? row.rpn : "-";
-        if(row.rpn >= 100) { box.style.color = "#ef4444"; box.style.borderColor = "#ef4444"; }
-        else if(row.rpn >= 50) { box.style.color = "#f59e0b"; box.style.borderColor = "#f59e0b"; }
-        else { box.style.color = "#0f172a"; box.style.borderColor = "var(--border)"; }
+    function handleImageUpload(e) {
+        let file = e.target.files[0]; if(!file) return; let reader = new FileReader();
+        reader.onload = function(event) { addImageToRow(event.target.result); document.getElementById('fileInput').value = ''; }; reader.readAsDataURL(file);
     }
+    function addImageToRow(dataUrl) { let r = workingTableData[populateIndex]; if(!r.images) r.images = []; r.images.push({ dataUrl: dataUrl, descPreset: '', descDetails: '' }); renderImageGallery(); }
+    function removeImage(imgIdx) { workingTableData[populateIndex].images.splice(imgIdx, 1); renderImageGallery(); }
 
-    function navigatePopulate(direction) {
-        saveCurrentRowData();
-        let newIndex = populateIndex + direction;
-        if (newIndex >= 0 && newIndex < workingTableData.length) {
-            populateIndex = newIndex;
-            renderPopulateStep();
+    function renderImageGallery() {
+        let r = workingTableData[populateIndex]; let html = '';
+        if (r.images && r.images.length > 0) {
+            let opts = '<option value="">-- Preset --</option>' + imgDescPresets.map(m => `<option value="${m}">${m}</option>`).join('');
+            r.images.forEach((img, i) => {
+                html += `
+                <div class="img-card">
+                    <img src="${img.dataUrl}" class="img-thumb">
+                    <div class="img-details">
+                        <select id="imgPre_${i}" style="width:100%;">${opts}</select>
+                        <input type="text" id="imgDet_${i}" value="${img.descDetails}" placeholder="Specific details..." style="width:100%;">
+                    </div>
+                    <button class="btn-danger" onclick="removeImage(${i})">X</button>
+                </div>`;
+            });
         }
+        document.getElementById('imageGallery').innerHTML = html;
+        if(r.images) { r.images.forEach((img, i) => { let el = document.getElementById(`imgPre_${i}`); if(el) el.value = img.descPreset; }); }
     }
 
-    function duplicateCurrentRow() {
+    // --- Export ZIP ---
+    async function exportZip() {
+        if (!workingTableData || workingTableData.length === 0) return alert("Please fill out data in the browser first.");
         saveCurrentRowData();
-        let current = workingTableData[populateIndex];
-        let dup = { 
-            interface: current.interface, 
-            mode: '', effect: '', 
-            cause: current.cause, 
-            sev: '', occ: '', det: '', rpn: '' 
-        };
-        workingTableData.splice(populateIndex + 1, 0, dup);
-        populateIndex++; 
-        renderPopulateStep();
-    }
-
-    // --- Export ---
-    function exportExcel() {
-        // If we have populated data, export that!
-        if (workingTableData && workingTableData.length > 0) {
-            exportPopulatedExcel();
-            return;
-        }
+        showLoading("Compiling your ZIP package... (Depending on image count, this may take a moment)", 0);
         
-        // Otherwise, generate the base template and export it
-        generateData();
-        if (finalTableData.length <= 1) return alert("Table is empty.");
-        triggerExcelDownload(finalTableData);
+        // Slight delay to allow DOM to render loading screen before heavy lifting
+        setTimeout(async () => {
+            let zip = new JSZip(); let imgFolder = zip.folder("images");
+            let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN", "Attached Images", "Image Descriptions"]];
+            
+            workingTableData.forEach((r, idx) => {
+                let mechStr = r.mechPreset ? (r.mechDetails ? `${r.mechPreset} - ${r.mechDetails}` : r.mechPreset) : (r.mechDetails || "");
+                let imgFileNames = []; let imgDescStrings = [];
+                if (r.images && r.images.length > 0) {
+                    r.images.forEach((img, imgIdx) => {
+                        let base64Data = img.dataUrl.split(',')[1]; let ext = img.dataUrl.substring("data:image/".length, img.dataUrl.indexOf(";base64"));
+                        let cleanInterface = r.interface.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_"); let fileName = `Row_${idx+1}_${cleanInterface}_${imgIdx+1}.${ext}`;
+                        imgFolder.file(fileName, base64Data, {base64: true}); imgFileNames.push(fileName);
+                        let descStr = img.descPreset ? (img.descDetails ? `${img.descPreset}: ${img.descDetails}` : img.descPreset) : (img.descDetails || "No description");
+                        imgDescStrings.push(`[${fileName}] ${descStr}`);
+                    });
+                }
+                exportData.push([r.interface, r.mode, r.effect, r.cause, mechStr, r.sev, r.occ, r.det, r.rpn, imgFileNames.join(', '), imgDescStrings.join(' | ')]);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(exportData); ws['!cols'] = [{wch:25},{wch:20},{wch:20},{wch:30},{wch:20},{wch:5},{wch:5},{wch:5},{wch:5},{wch:25},{wch:40}];
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DFMEA");
+            const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }); zip.file("DFMEA_Table.xlsx", excelBuffer);
+            
+            zip.generateAsync({type:"blob"}, function updateCallback(metadata) {
+                showLoading(`Zipping files: ${metadata.percent.toFixed(0)}%`, metadata.percent);
+            }).then(function(content) {
+                const url = window.URL.createObjectURL(content); const a = document.createElement("a"); a.href = url; a.download = "DFMEA_Export.zip";
+                document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove();
+                hideLoading();
+            });
+        }, 50);
     }
 
-    function exportPopulatedExcel() {
-        saveCurrentRowData();
-        let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Severity", "Occurrence", "Detection", "RPN"]];
-        workingTableData.forEach(r => {
-            exportData.push([r.interface, r.mode, r.effect, r.cause, r.sev, r.occ, r.det, r.rpn]);
-        });
-        triggerExcelDownload(exportData);
+    // --- TAB 7: BEAUTIFUL PDF GENERATION ---
+    async function handleZipUploadForPDF(event) {
+        const file = event.target.files[0]; if(!file) return;
+        document.getElementById('pdfStatus').style.display = 'none';
+        document.getElementById('btnDownloadPDF').style.display = 'none';
+        
+        showLoading("Extracting ZIP contents...");
+
+        try {
+            let zipFiles = await JSZip.loadAsync(file);
+            let excelFile = zipFiles.file("DFMEA_Table.xlsx");
+            if (!excelFile) throw new Error("Could not find DFMEA_Table.xlsx in the ZIP.");
+            let excelData = await excelFile.async("arraybuffer");
+            let wb = XLSX.read(new Uint8Array(excelData), {type: 'array'});
+            let jsonRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
+            
+            let parsedRows = jsonRows.slice(1).map(r => ({
+                interface: r[0]||"", mode: r[1]||"", effect: r[2]||"", cause: r[3]||"", mech: r[4]||"",
+                sev: r[5]||"", occ: r[6]||"", det: r[7]||"", rpn: r[8]||"",
+                imgFiles: (r[9]||"").split(', ').filter(x=>x), imgDescs: (r[10]||"").split(' | ').filter(x=>x)
+            }));
+
+            let imageMap = {};
+            for (let filename in zipFiles.files) {
+                if (filename.startsWith("images/") && !zipFiles.files[filename].dir) {
+                    let base64 = await zipFiles.files[filename].async("base64");
+                    let ext = filename.split('.').pop().toLowerCase();
+                    let mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+                    imageMap[filename.replace('images/', '')] = `data:${mime};base64,${base64}`;
+                }
+            }
+
+            pdfGenerationData = { rows: parsedRows, imageMap: imageMap };
+            
+            document.getElementById('pdfRowCount').innerText = parsedRows.length;
+            document.getElementById('pdfImgCount').innerText = Object.keys(imageMap).length;
+            document.getElementById('pdfStatus').style.display = 'block';
+            document.getElementById('btnDownloadPDF').style.display = 'block';
+
+        } catch (err) { alert("Failed to parse ZIP. " + err.message); }
+        finally { hideLoading(); }
+        document.getElementById('pdfZipInput').value = '';
     }
 
-    function triggerExcelDownload(dataArray) {
-        const ws = XLSX.utils.aoa_to_sheet(dataArray);
-        const wscols = [ {wch:35}, {wch:25}, {wch:25}, {wch:40}, {wch:8}, {wch:8}, {wch:8}, {wch:8} ];
-        ws['!cols'] = wscols;
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "DFMEA");
-        XLSX.writeFile(wb, "DFMEA_Table.xlsx");
+    function generatePDFReport() {
+        if (!pdfGenerationData || pdfGenerationData.rows.length === 0) return;
+        
+        showLoading("Generating high-resolution PDF... This may take several seconds depending on image sizes.");
+
+        setTimeout(() => {
+            let rows = pdfGenerationData.rows;
+            let images = pdfGenerationData.imageMap;
+            let content = [];
+            
+            // 1. Cover Page
+            content.push({ text: 'Design Failure Mode and Effects Analysis', style: 'coverSubtitle', margin: [0, 150, 0, 10], alignment: 'center' });
+            content.push({ text: 'DFMEA REPORT', style: 'coverTitle', margin: [0, 0, 0, 20], alignment: 'center' });
+            content.push({ canvas: [{ type: 'line', x1: 150, y1: 0, x2: 365, y2: 0, lineWidth: 2, lineColor: '#2563eb' }], margin: [0, 0, 0, 40] });
+            content.push({ text: `Generated on ${new Date().toLocaleDateString()}`, style: 'coverDate', alignment: 'center', margin: [0, 0, 0, 100] });
+            content.push({ text: '', pageBreak: 'after' });
+
+            // 2. Table of Contents
+            content.push({ text: 'Table of Contents', style: 'header', margin: [0, 0, 0, 20] });
+            
+            let tree = {};
+            rows.forEach((r, i) => {
+                let match = r.interface.match(/(.+) \((.+)\) - (.+ \(.+\))/);
+                let comp = match ? match[1] : "Other";
+                let feat = match ? match[2] : "-";
+                if (!tree[comp]) tree[comp] = {};
+                if (!tree[comp][feat]) tree[comp][feat] = [];
+                tree[comp][feat].push({ index: i, interface: r.interface });
+            });
+
+            for (let comp in tree) {
+                content.push({ text: comp, style: 'tocComp', margin: [0, 15, 0, 5] });
+                for (let feat in tree[comp]) {
+                    content.push({ text: `• ${feat}`, style: 'tocFeat', margin: [15, 5, 0, 5] });
+                    tree[comp][feat].forEach(item => {
+                        content.push({ 
+                            text: `Row ${item.index + 1}: vs. ${item.interface.split(' - ')[1]}`, 
+                            linkToDestination: `row_${item.index}`,
+                            style: 'tocItem',
+                            margin: [35, 3, 0, 3] 
+                        });
+                    });
+                    // Small gap after a feature group
+                    content.push({ text: '', margin: [0, 0, 0, 8] });
+                }
+            }
+            content.push({ text: '', pageBreak: 'after' });
+
+            // 3. Row Pages (One per row + Attachment pages)
+            rows.forEach((r, i) => {
+                content.push({ text: `Row ${i + 1} Detail`, id: `row_${i}`, style: 'header', margin: [0, 0, 0, 15] });
+                
+                // Custom Table Design
+                content.push({
+                    table: {
+                        widths: ['30%', '70%'],
+                        body: [
+                            [{text: 'Component Interface', style: 'th'}, {text: r.interface, style: 'td'}],
+                            [{text: 'Potential Cause', style: 'th'}, {text: r.cause, style: 'td'}],
+                            [{text: 'Failure Mechanism', style: 'th'}, {text: r.mech || '-', style: 'td'}],
+                            [{text: 'Failure Mode', style: 'th'}, {text: r.mode || '-', style: 'td'}],
+                            [{text: 'Effect of Failure', style: 'th'}, {text: r.effect || '-', style: 'td'}],
+                            [{text: 'Severity (S)', style: 'th'}, {text: r.sev || '-', style: 'tdNum'}],
+                            [{text: 'Occurrence (O)', style: 'th'}, {text: r.occ || '-', style: 'tdNum'}],
+                            [{text: 'Detection (D)', style: 'th'}, {text: r.det || '-', style: 'tdNum'}],
+                            [{text: 'Risk Priority Number', style: 'th'}, {text: r.rpn || '-', style: 'tdRpn', color: r.rpn >= 100 ? '#ef4444' : '#0f172a'}]
+                        ]
+                    },
+                    layout: {
+                        hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 2 : 1; },
+                        vLineWidth: function (i, node) { return (i === 0 || i === node.table.widths.length) ? 2 : 1; },
+                        hLineColor: function (i, node) { return '#cbd5e1'; },
+                        vLineColor: function (i, node) { return '#cbd5e1'; },
+                        paddingLeft: function(i, node) { return 10; },
+                        paddingRight: function(i, node) { return 10; },
+                        paddingTop: function(i, node) { return 8; },
+                        paddingBottom: function(i, node) { return 8; },
+                    },
+                    margin: [0, 0, 0, 20]
+                });
+
+                // Append Images
+                if (r.imgFiles && r.imgFiles.length > 0) {
+                    r.imgFiles.forEach((filename) => {
+                        if (images[filename]) {
+                            content.push({ text: '', pageBreak: 'before' });
+                            
+                            // Attachment Header
+                            content.push({
+                                table: {
+                                    widths: ['*'],
+                                    body: [ [ {text: `Attachment: Row ${i + 1}`, style: 'attachHeader'} ] ]
+                                }, layout: 'noBorders', margin: [0, 0, 0, 20]
+                            });
+                            
+                            // Description Extraction
+                            let desc = r.imgDescs.find(d => d.startsWith(`[${filename}]`));
+                            if (desc) desc = desc.replace(`[${filename}] `, ''); else desc = "No description provided.";
+                            
+                            // The Image itself
+                            content.push({ image: images[filename], width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
+                            
+                            // Caption
+                            content.push({ text: desc, alignment: 'center', italics: true, color: '#475569', fontSize: 10 });
+                        }
+                    });
+                }
+                
+                if (i < rows.length - 1) content.push({ text: '', pageBreak: 'after' });
+            });
+
+            // Generate Document Setup
+            let docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [40, 60, 40, 60],
+                info: { title: 'DFMEA Report' },
+                header: function(currentPage, pageCount) {
+                    if(currentPage === 1) return null;
+                    return { text: 'DFMEA Report', margin: [40, 20, 40, 0], color: '#94a3b8', fontSize: 9, bold: true };
+                },
+                footer: function(currentPage, pageCount) {
+                    if(currentPage === 1) return null;
+                    return { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', margin: [0, 20, 40, 0], color: '#64748b', fontSize: 9 };
+                },
+                content: content,
+                styles: {
+                    coverTitle: { fontSize: 32, bold: true, color: '#1e3a8a', characterSpacing: 2 },
+                    coverSubtitle: { fontSize: 14, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 },
+                    coverDate: { fontSize: 12, color: '#94a3b8' },
+                    header: { fontSize: 20, bold: true, color: '#0f172a', borderBottom: '2px solid #e2e8f0' },
+                    th: { bold: true, fillColor: '#1e3a8a', color: 'white', alignment: 'left' },
+                    td: { alignment: 'left', color: '#334155' },
+                    tdNum: { alignment: 'center', color: '#334155', bold: true },
+                    tdRpn: { alignment: 'center', bold: true, fontSize: 14 },
+                    tocComp: { fontSize: 16, bold: true, color: '#1e3a8a' },
+                    tocFeat: { fontSize: 12, bold: true, color: '#475569' },
+                    tocItem: { fontSize: 11, color: '#2563eb', decoration: 'underline' },
+                    attachHeader: { fontSize: 14, bold: true, color: '#334155', fillColor: '#f1f5f9', margin: [10, 5, 10, 5] }
+                },
+                defaultStyle: { font: 'Roboto', fontSize: 11, lineHeight: 1.3 }
+            };
+
+            pdfMake.createPdf(docDefinition).download('DFMEA_Report.pdf', () => {
+                hideLoading();
+            });
+            
+        }, 100); // 100ms timeout allows the loading UI to render
     }
-    
-    // Initialize defaults
-    renderSettingsTab();
+
 </script>
-
 </body>
 </html>
