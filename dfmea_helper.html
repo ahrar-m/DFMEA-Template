@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DFMEA Generator Helper (Secure Offline Mode)</title>
+    <title>DFMEA Helper (Secure Offline Mode)</title>
     
     <script>
         /*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
@@ -58,51 +58,29 @@
         };
     </script>
 
-    
     <style>
         /* DARK MODE DEFAULT VARIABLES */
         :root { 
-            --primary: #3b82f6; 
-            --primary-hover: #60a5fa;
-            --bg: #0f172a; 
-            --card-bg: #1e293b;
-            --border: #334155; 
-            --progress: #10b981;
-            --text-main: #e2e8f0;
-            --text-heading: #f8fafc;
-            --text-muted: #94a3b8;
-            --highlight-bg: #0f172a;
-            --th-bg: #334155;
-            --info-bg: #1e3a8a;
-            --info-border: #3b82f6;
-            --info-text: #bfdbfe;
-            --success-bg: #064e3b;
-            --success-border: #166534;
-            --success-text: #86efac;
-            --danger-bg: #7f1d1d;
-            --danger-text: #fca5a5;
+            --primary: #3b82f6; --primary-hover: #60a5fa;
+            --bg: #0f172a; --card-bg: #1e293b;
+            --border: #334155; --progress: #10b981;
+            --text-main: #e2e8f0; --text-heading: #f8fafc; --text-muted: #94a3b8;
+            --highlight-bg: #0f172a; --th-bg: #334155;
+            --info-bg: #1e3a8a; --info-border: #3b82f6; --info-text: #bfdbfe;
+            --success-bg: #064e3b; --success-border: #166534; --success-text: #86efac;
+            --danger-bg: #7f1d1d; --danger-text: #fca5a5;
         }
 
         /* LIGHT MODE VARIABLES */
         body.light-mode {
-            --primary: #2563eb; 
-            --primary-hover: #1d4ed8;
-            --bg: #f8fafc; 
-            --card-bg: #ffffff;
+            --primary: #2563eb; --primary-hover: #1d4ed8;
+            --bg: #f8fafc; --card-bg: #ffffff;
             --border: #cbd5e1; 
-            --text-main: #334155;
-            --text-heading: #0f172a;
-            --text-muted: #64748b;
-            --highlight-bg: #f8fafc;
-            --th-bg: #f1f5f9;
-            --info-bg: #e0e7ff;
-            --info-border: #c7d2fe;
-            --info-text: #1e40af;
-            --success-bg: #f0fdf4;
-            --success-border: #86efac;
-            --success-text: #166534;
-            --danger-bg: #fef2f2;
-            --danger-text: #b91c1c;
+            --text-main: #334155; --text-heading: #0f172a; --text-muted: #64748b;
+            --highlight-bg: #f8fafc; --th-bg: #f1f5f9;
+            --info-bg: #e0e7ff; --info-border: #c7d2fe; --info-text: #1e40af;
+            --success-bg: #f0fdf4; --success-border: #86efac; --success-text: #166534;
+            --danger-bg: #fef2f2; --danger-text: #b91c1c;
         }
 
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 20px; transition: background-color 0.3s, color 0.3s; }
@@ -176,7 +154,7 @@
         .range-badge { background: var(--info-bg); color: var(--info-text); padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
 
         .paste-zone { border: 2px dashed var(--border); background: var(--highlight-bg); padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: background 0.2s; margin-bottom: 15px; }
-        .paste-zone:hover { background: var(--info-bg); border-color: var(--primary); color: var(--info-text); }
+        .paste-zone:hover, .paste-zone:focus { background: var(--info-bg); border-color: var(--primary); color: var(--info-text); outline: none; }
         .img-card { display: flex; gap: 15px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; background: var(--card-bg); align-items: flex-start; }
         .img-thumb { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); }
         .img-details { flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
@@ -192,6 +170,11 @@
         .loading-bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.1s; }
         
         .action-buttons { display: flex; gap: 8px; }
+        
+        .pdf-settings-panel { background: var(--card-bg); border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .pdf-settings-panel h3 { margin-bottom: 15px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        .setting-row { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; font-weight: 500; transition: opacity 0.2s; }
+        .setting-row input[type="radio"], .setting-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -234,15 +217,20 @@
 
     <div id="tab3" class="tab-content">
         <h2>Feature-to-Feature Matrix</h2>
+        <div class="info-box" style="margin-bottom: 10px;">
+            <strong>Total Feature to Feature Combinations: </strong><span id="matrixTotalCount" style="font-size: 18px; color: var(--progress);">0</span>
+        </div>
         <div id="matrixContainer" class="matrix-wrapper"></div>
         <button class="btn-success btn-save-large" onclick="switchTab(4)" id="btnContinueFromMatrix" style="display:none; margin-top: 20px;">Continue to Dimensions ➔</button>
     </div>
 
     <div id="tab4" class="tab-content">
-        <h2>Feature Dimensions</h2>
-        <span class="hint">Use the input box to add measurable dimensions to your features.</span>
+        <h2>Feature Details</h2>
+        <span class="hint">Add measurable dimensions and attach reference images for specific features.</span>
         <div id="dimensionsContainer"></div>
-        <button class="btn-success btn-save-large" onclick="switchTab(5)" id="btnContinueFromDimensions" style="display:none;">Continue to Settings ➔</button>
+        <button class="btn-success btn-save-large" onclick="saveAllDimensions()" id="btnSaveDimensions" style="display:none;">💾 Save Dimensions & Continue ➔</button>
+        
+        <input type="file" id="featFileInput" accept="image/*" style="display:none" onchange="handleFeatImageUpload(event)">
     </div>
 
     <div id="tab5" class="tab-content">
@@ -305,7 +293,12 @@
                 <button class="btn-outline" onclick="generatePreview()">↻ Refresh Grid</button>
                 <button class="btn-danger" style="font-size: 14px;" onclick="clearPopulatedData()" id="btnClearData" style="display:none;">🗑️ Clear Data</button>
             </div>
-            <div class="table-responsive" style="margin-top: 20px;">
+            
+            <div class="info-box" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>Showing top <input type="number" id="previewLimit" value="25" oninput="generatePreview()" style="width: 70px; text-align:center;"> of <strong id="previewTotalCount" style="color:var(--primary);">0</strong> rows</div>
+            </div>
+
+            <div class="table-responsive" style="margin-top: 10px;">
                 <table id="previewTable">
                     <thead><tr><th>Interface</th><th>Failure Mode</th><th>Effect</th><th>Cause</th><th>Mechanism</th><th>S</th><th>O</th><th>D</th><th>RPN</th><th>Images</th></tr></thead>
                     <tbody id="previewBody"></tbody>
@@ -320,7 +313,7 @@
                     <button class="sub-tab-btn" id="btnSubIndex" onclick="switchSubTab('index')">📑 Row Index</button>
                 </div>
                 <div>
-                    <input type="number" id="jumpInput" placeholder="Row #" style="width: 80px; padding: 6px;">
+                    <input type="number" id="jumpInput" placeholder="Row #" style="width: 80px; padding: 6px;" onkeypress="handleEnter(event, jumpToRowInput)">
                     <button class="btn-info" onclick="jumpToRowInput()" style="padding: 6px 12px;">Jump</button>
                     <button class="btn-danger" style="font-size: 14px; margin-left: 15px;" onclick="exitPopulating()">Stop & Go Back</button>
                 </div>
@@ -387,7 +380,42 @@
             <strong>✅ ZIP Loaded Successfully!</strong> Found <span id="pdfRowCount">0</span> rows and <span id="pdfImgCount">0</span> images.
         </div>
 
-        <button class="btn-success btn-save-large" id="btnDownloadPDF" style="display:none;" onclick="generatePDFReport()">📄 Build & Download PDF Report</button>
+        <div id="pdfSettings" class="pdf-settings-panel" style="display:none;">
+            <h3>📄 PDF Formatting Options</h3>
+            
+            <div class="input-stacked" style="background:transparent; border:none; padding:0;">
+                <label>PDF Report Title</label>
+                <input type="text" id="pdfTitleInput" value="DFMEA REPORT" style="max-width: 400px;">
+            </div>
+            
+            <div class="section-divider" style="margin: 15px 0;"></div>
+            
+            <p style="margin-bottom:10px; font-weight:bold; color:var(--text-heading);">Table of Contents Style:</p>
+            <label class="setting-row">
+                <input type="radio" name="pdfTocStyle" value="grouped" checked>
+                Group Interface Links (e.g. "Rows 12-15")
+            </label>
+            <label class="setting-row">
+                <input type="radio" name="pdfTocStyle" value="rpn">
+                Show Un-Grouped Links with RPN Values
+            </label>
+            
+            <div class="section-divider" style="margin: 15px 0;"></div>
+            
+            <label class="setting-row">
+                <input type="checkbox" id="pdfSortRPN">
+                Sort Entire PDF by Risk (RPN Descending)
+            </label>
+            
+            <label class="setting-row" style="color: #ef4444;">
+                <input type="checkbox" id="pdfSkipBlank">
+                Skip Blank/Unpopulated Rows 
+            </label>
+            <p class="hint" style="margin-left: 30px; color: #ef4444;"><strong>Pre-flight check:</strong> <span id="blankRowCount">0</span> row(s) are empty and will be skipped.</p>
+            
+            <button class="btn-success btn-save-large" id="btnDownloadPDF" onclick="generatePDFReport()" style="margin-top: 20px;">Build & Download PDF Report</button>
+        </div>
+        
     </div>
 
 </div>
@@ -420,10 +448,63 @@
     }
     function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
 
-    // --- SOD Options ---
-    const sevOptions = [{val: "", text: "-- Select --"},{val: 10, text: "10 - Very High"},{val: 9, text: "9 - Very High"},{val: 8, text: "8 - High"},{val: 7, text: "7 - High"},{val: 6, text: "6 - Moderate"},{val: 5, text: "5 - Moderate"},{val: 4, text: "4 - Moderate"},{val: 3, text: "3 - Low"},{val: 2, text: "2 - Low"},{val: 1, text: "1 - Very Low"}];
-    const occOptions = [{val: "", text: "-- Select --"},{val: 10, text: "10 - Extremely High"},{val: 9, text: "9 - Very High"},{val: 8, text: "8 - Very High"},{val: 7, text: "7 - High"},{val: 6, text: "6 - High"},{val: 5, text: "5 - Moderate"},{val: 4, text: "4 - Moderate"},{val: 3, text: "3 - Low"},{val: 2, text: "2 - Very Low"},{val: 1, text: "1 - Extremely Low"}];
-    const detOptions = [{val: "", text: "-- Select --"},{val: 10, text: "10 - Very Low"},{val: 9, text: "9 - Very Low"},{val: 8, text: "8 - Low"},{val: 7, text: "7 - Moderate"},{val: 6, text: "6 - Moderate"},{val: 5, text: "5 - Moderate"},{val: 4, text: "4 - High"},{val: 3, text: "3 - High"},{val: 2, text: "2 - High"},{val: 1, text: "1 - Very High"}];
+    // --- Image Auto-Conversion to JPEG (Safeguard for WebP/HEIC) ---
+    function processImageFile(fileOrBlob, callback) {
+        let reader = new FileReader();
+        reader.onload = function(event) { 
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                let ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                callback(canvas.toDataURL('image/jpeg', 0.9));
+            };
+            img.src = event.target.result;
+        }; 
+        reader.readAsDataURL(fileOrBlob);
+    }
+
+    // --- SOD Detailed Standard Options ---
+    const sevOptions = [
+        {val: "", text: "-- Select Severity --"},
+        {val: 10, text: "10 - Danger Without Warning: Affects safe operation of the vehicle and/or other vehicles, the health of driver or passenger(s) or road users or pedestrians."},
+        {val: 9, text: "9 - Danger With Warning: Noncompliance with regulations."},
+        {val: 8, text: "8 - High: Loss of primary vehicle function necessary for normal driving during expected service life."},
+        {val: 7, text: "7 - High: Degradation of primary vehicle function necessary for normal driving during expected service life."},
+        {val: 6, text: "6 - Moderate: Loss of secondary vehicle function."},
+        {val: 5, text: "5 - Moderate: Degradation of secondary vehicle function."},
+        {val: 4, text: "4 - Moderate: Very objectionable appearance, sound, vibration, harshness, or haptics."},
+        {val: 3, text: "3 - Low: Moderately objectionable appearance, sound, vibration, harshness, or haptics."},
+        {val: 2, text: "2 - Low: Slightly objectionable appearance, sound, vibration, harshness, or haptics."},
+        {val: 1, text: "1 - Very low: No discernible effect."}
+    ];
+    const occOptions = [
+        {val: "", text: "-- Select Occurrence --"},
+        {val: 10, text: "10 - Extremely high: First application of new technology anywhere without operating experience... Prevention controls not able to predict field performance."},
+        {val: 9, text: "9 - Very high: First use of design with technical innovations or materials within the company... Prevention controls not targeted to identify performance."},
+        {val: 8, text: "8 - Very high: First use of design with technical innovations or materials on a new application... Prevention controls not a reliable indicator of field performance."},
+        {val: 7, text: "7 - High: New design based on similar technology and materials... Prevention controls provide limited indication of performance."},
+        {val: 6, text: "6 - High: Similar to previous designs, using existing technology... Prevention controls provide some ability to prevent a failure cause."},
+        {val: 5, text: "5 - Moderate: Detail changes to previous design, using proven technology... Prevention controls capable of finding deficiencies and provide some indication of performance."},
+        {val: 4, text: "4 - Moderate: Almost identical design with short-term field exposure... Prevention controls capable of finding deficiencies and indicate likely design conformance."},
+        {val: 3, text: "3 - Low: Detail changes to known design and testing or field experience... Prevention controls capable of finding deficiencies and predict conformance."},
+        {val: 2, text: "2 - Very low: Almost identical mature design with long term field exposure... Prevention controls capable of finding deficiencies and indicate confidence in design conformance."},
+        {val: 1, text: "1 - Extremely low: Failure eliminated through prevention control and failure cause is not possible by design."}
+    ];
+    const detOptions = [
+        {val: "", text: "-- Select Detection --"},
+        {val: 10, text: "10 - Very low: Test procedure yet to be developed. (Test method not defined)"},
+        {val: 9, text: "9 - Very low: Test method not designed specifically to detect failure mode or cause. (Pass-Fail, Test-to-Fail, Degradation Testing)"},
+        {val: 8, text: "8 - Low: New test method; not proven. (Pass-Fail, Test-to-Fail, Degradation Testing)"},
+        {val: 7, text: "7 - Moderate: Proven test method for verification... planned timing is later... (Pass-Fail Testing)"},
+        {val: 6, text: "6 - Moderate: Proven test method for verification... planned timing is later... (Test-to-Failure)"},
+        {val: 5, text: "5 - Moderate: Proven test method for verification... planned timing is later... (Degradation Testing)"},
+        {val: 4, text: "4 - High: Proven test method for verification... planned timing is sufficient... (Pass-Fail Testing)"},
+        {val: 3, text: "3 - High: Proven test method for verification... planned timing is sufficient... (Test-to-Failure)"},
+        {val: 2, text: "2 - High: Proven test method for verification... planned timing is sufficient... (Degradation Testing)"},
+        {val: 1, text: "1 - Very high: Prior testing confirmed that failure mode or cause cannot occur, or detection methods proven to always detect."}
+    ];
 
     function populateSelects() {
         ['popSev', 'popOcc', 'popDet'].forEach((id, idx) => {
@@ -433,33 +514,57 @@
         });
     }
 
+    // --- State Data ---
     let availablePresets = [{ ext1: 'too high', ext2: 'too low' }, { ext1: 'too large', ext2: 'too small' }];
     let mechPresets = []; let imgDescPresets = []; 
     let components = []; let featuresByComp = {}; let interfaces = {}; let dimsByFeature = {};  
+    let featImages = {}; 
     let assignmentMode = 'global'; let globalDimAssignments = {}; let specificDimAssignments = {}; 
     let finalTableData = []; let workingTableData = []; let populateIndex = 0;
-    let pdfGenerationData = { rows: [], imageMap: {} };
+    
+    let pdfGenerationData = { rows: [], imageMap: {}, featImagesMap: [] };
     populateSelects();
 
-    // --- Safety Checks for Deletion ---
-    function isRowPopulated(r) {
-        return (r.mode || r.effect || r.mechPreset || r.mechDetails || r.sev || r.occ || r.det || (r.images && r.images.length > 0));
-    }
-    function getAffectedPopulatedRows(predicate) {
-        return workingTableData.filter(predicate).filter(isRowPopulated).length;
-    }
+    // --- Safety Checks for Empty Fields & Navigation ---
+    function isRowPopulated(r) { return (r.mode || r.effect || r.mechPreset || r.mechDetails || r.sev || r.occ || r.det || (r.images && r.images.length > 0)); }
+    function getAffectedPopulatedRows(predicate) { return workingTableData.filter(predicate).filter(isRowPopulated).length; }
 
-    // --- Core Navigation ---
     function handleEnter(e, func) { if (e.key === 'Enter') { e.preventDefault(); func(); } }
+    
     function switchTab(step) {
+        // Validation Checks before proceeding
+        if (step >= 3 && step <= 6) {
+            let emptyComps = components.filter(c => !featuresByComp[c] || featuresByComp[c].length === 0);
+            if (emptyComps.length > 0) {
+                alert(`Cannot proceed. The following components have no features:\n\n- ${emptyComps.join('\n- ')}\n\nPlease add at least one feature to each in Tab 2.`);
+                return;
+            }
+        }
+        if (step >= 5 && step <= 6) {
+            let emptyFeats = [];
+            components.forEach(c => {
+                (featuresByComp[c] || []).forEach(f => {
+                    let key = `${c}|${f}`;
+                    if (!dimsByFeature[key] || dimsByFeature[key].length === 0) emptyFeats.push(`${c} ➔ ${f}`);
+                });
+            });
+            if (emptyFeats.length > 0) {
+                alert(`Cannot proceed. The following features have no dimensions:\n\n- ${emptyFeats.join('\n- ')}\n\nPlease add at least one dimension to each in Tab 4.`);
+                return;
+            }
+        }
+
+        // Standard Switch Logic
         for (let i = 1; i <= 7; i++) { document.getElementById(`tab${i}`).classList.remove('active'); document.getElementById(`btnTab${i}`).classList.remove('active'); }
         document.getElementById(`tab${step}`).classList.add('active'); document.getElementById(`btnTab${step}`).classList.add('active');
+        
         if (step === 2) renderFeaturesTab(); 
-        if (step === 3) { buildFeatureMatrix(); harvestDimensions(); } 
-        if (step === 4) renderDimensionsTab();
+        if (step === 3) { buildFeatureMatrix(); harvestDimensions(); updateMatrixTotalRows(); } 
+        if (step === 4) { renderDimensionsTab(); }
         if (step === 5) { harvestDimensions(); renderSettingsTab(); renderMechPresets(); renderImgDescPresets(); }
         if (step === 6) { document.getElementById('previewSection').style.display = 'block'; document.getElementById('populateSection').style.display = 'none'; generatePreview(); }
     }
+    
     function switchSubTab(target) {
         document.getElementById('btnSubForm').classList.remove('active'); document.getElementById('btnSubIndex').classList.remove('active');
         document.getElementById('subTabForm').classList.remove('active'); document.getElementById('subTabIndex').classList.remove('active');
@@ -469,7 +574,7 @@
 
     // --- Session JSON ---
     function exportSession() {
-        const sessionData = { components, featuresByComp, interfaces, dimsByFeature, availablePresets, mechPresets, imgDescPresets, assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData };
+        const sessionData = { components, featuresByComp, interfaces, dimsByFeature, featImages, availablePresets, mechPresets, imgDescPresets, assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessionData));
         const a = document.createElement('a'); a.href = dataStr; a.download = "dfmea_session.json"; document.body.appendChild(a); a.click(); a.remove();
     }
@@ -479,6 +584,7 @@
             try {
                 const data = JSON.parse(e.target.result);
                 components = data.components || []; featuresByComp = data.featuresByComp || {}; interfaces = data.interfaces || {}; dimsByFeature = data.dimsByFeature || {};
+                featImages = data.featImages || {};
                 availablePresets = data.availablePresets || availablePresets; mechPresets = data.mechPresets || []; imgDescPresets = data.imgDescPresets || [];
                 assignmentMode = data.assignmentMode || 'global'; globalDimAssignments = data.globalDimAssignments || {}; specificDimAssignments = data.specificDimAssignments || {};
                 workingTableData = data.workingTableData || [];
@@ -489,30 +595,26 @@
         }; reader.readAsText(file);
     }
 
-    // --- TAB 1: Components (With Rename/Remove Logic) ---
+    // --- TAB 1: Components ---
     function addComponent() {
         document.getElementById('compInput').value.split(',').map(v => cleanName(v)).filter(v => v).forEach(val => {
             if (!components.includes(val)) { components.push(val); if (!featuresByComp[val]) featuresByComp[val] = []; }
         });
         document.getElementById('compInput').value = ''; renderComponents();
     }
-    
     function removeComponent(c) { 
         let popCount = getAffectedPopulatedRows(r => r.interface && (r.interface.includes(`${c} (`) || r.interface.includes(`- ${c} (`)));
         if(popCount > 0 && !confirm(`Warning: Deleting '${c}' will permanently delete ${popCount} filled row(s) from your working session. Proceed?`)) return;
-        
         components = components.filter(x => x !== c); delete featuresByComp[c];
         workingTableData = workingTableData.filter(r => !(r.interface && (r.interface.includes(`${c} (`) || r.interface.includes(`- ${c} (`))));
         renderComponents();
     }
-    
     function renameComponent(oldC) {
         let newC = prompt(`Rename Component '${oldC}' to:`, oldC);
         if(!newC || cleanName(newC) === '' || newC === oldC) return;
         newC = cleanName(newC); if(components.includes(newC)) return alert("Component name already exists.");
         
-        components[components.indexOf(oldC)] = newC;
-        featuresByComp[newC] = featuresByComp[oldC]; delete featuresByComp[oldC];
+        components[components.indexOf(oldC)] = newC; featuresByComp[newC] = featuresByComp[oldC]; delete featuresByComp[oldC];
         
         let newInterfaces = {};
         Object.keys(interfaces).forEach(k => {
@@ -523,6 +625,9 @@
         
         let newDims = {};
         Object.keys(dimsByFeature).forEach(k => { let [c, f] = k.split('|'); if(c === oldC) c = newC; newDims[`${c}|${f}`] = dimsByFeature[k]; }); dimsByFeature = newDims;
+        
+        let newFeatImgs = {};
+        Object.keys(featImages).forEach(k => { let [c, f] = k.split('|'); if(c === oldC) c = newC; newFeatImgs[`${c}|${f}`] = featImages[k]; }); featImages = newFeatImgs;
         
         let newSpecDims = {};
         Object.keys(specificDimAssignments).forEach(k => { let [c, f, d] = k.split('|'); if(c === oldC) c = newC; newSpecDims[`${c}|${f}|${d}`] = specificDimAssignments[k]; }); specificDimAssignments = newSpecDims;
@@ -536,33 +641,24 @@
         });
         renderComponents();
     }
-
     function renderComponents() {
         let html = '';
-        components.forEach(c => { 
-            html += `<li><span>${c}</span> <div class="action-buttons"><button class="btn-warning" onclick="renameComponent('${c}')">✏️</button><button class="btn-danger" onclick="removeComponent('${c}')">🗑️</button></div></li>`; 
-        });
-        document.getElementById('compList').innerHTML = html;
-        document.getElementById('btnContinueFromFeatures').style.display = components.length ? 'block' : 'none';
+        components.forEach(c => { html += `<li><span>${c}</span> <div class="action-buttons"><button class="btn-warning" onclick="renameComponent('${c}')">✏️</button><button class="btn-danger" onclick="removeComponent('${c}')">🗑️</button></div></li>`; });
+        document.getElementById('compList').innerHTML = html; document.getElementById('btnContinueFromFeatures').style.display = components.length ? 'block' : 'none';
     }
 
-    // --- TAB 2: Features (With Rename/Remove Logic) ---
+    // --- TAB 2: Features ---
     function addFeature(comp, inputId) {
-        document.getElementById(inputId).value.split(',').map(v => cleanName(v)).filter(v => v).forEach(val => {
-            if (!featuresByComp[comp].includes(val)) featuresByComp[comp].push(val);
-        });
+        document.getElementById(inputId).value.split(',').map(v => cleanName(v)).filter(v => v).forEach(val => { if (!featuresByComp[comp].includes(val)) featuresByComp[comp].push(val); });
         document.getElementById(inputId).value = ''; renderFeaturesTab();
     }
-
     function removeFeature(comp, feat) {
         let popCount = getAffectedPopulatedRows(r => r.interface && (r.interface.includes(`${comp} (${feat})`) || r.interface.includes(`- ${comp} (${feat})`)));
         if(popCount > 0 && !confirm(`Warning: Deleting '${feat}' will permanently delete ${popCount} filled row(s). Proceed?`)) return;
-        
         featuresByComp[comp] = featuresByComp[comp].filter(x => x !== feat);
         workingTableData = workingTableData.filter(r => !(r.interface && (r.interface.includes(`${comp} (${feat})`) || r.interface.includes(`- ${comp} (${feat})`))));
         renderFeaturesTab();
     }
-
     function renameFeature(comp, oldF) {
         let newF = prompt(`Rename Feature '${oldF}' (in ${comp}) to:`, oldF);
         if(!newF || cleanName(newF) === '' || newF === oldF) return;
@@ -580,41 +676,55 @@
         let newDims = {};
         Object.keys(dimsByFeature).forEach(k => { let [c, f] = k.split('|'); if(c === comp && f === oldF) f = newF; newDims[`${c}|${f}`] = dimsByFeature[k]; }); dimsByFeature = newDims;
         
+        let newFeatImgs = {};
+        Object.keys(featImages).forEach(k => { let [c, f] = k.split('|'); if(c === comp && f === oldF) f = newF; newFeatImgs[`${c}|${f}`] = featImages[k]; }); featImages = newFeatImgs;
+
         let newSpecDims = {};
         Object.keys(specificDimAssignments).forEach(k => { let [c, f, d] = k.split('|'); if(c === comp && f === oldF) f = newF; newSpecDims[`${c}|${f}|${d}`] = specificDimAssignments[k]; }); specificDimAssignments = newSpecDims;
         
         workingTableData.forEach(r => {
             if(r.interface) {
-                let rx1 = new RegExp('^' + escapeRegExp(comp) + ' \\(' + escapeRegExp(oldF) + '\\)');
-                let rx2 = new RegExp('- ' + escapeRegExp(comp) + ' \\(' + escapeRegExp(oldF) + '\\)');
+                let rx1 = new RegExp('^' + escapeRegExp(comp) + ' \\(' + escapeRegExp(oldF) + '\\)'); let rx2 = new RegExp('- ' + escapeRegExp(comp) + ' \\(' + escapeRegExp(oldF) + '\\)');
                 r.interface = r.interface.replace(rx1, comp + ' (' + newF + ')').replace(rx2, '- ' + comp + ' (' + newF + ')');
             }
-            if(r.cause) {
-                let rxCause = new RegExp('^' + escapeRegExp(comp) + ' ' + escapeRegExp(oldF) + ' ');
-                r.cause = r.cause.replace(rxCause, comp + ' ' + newF + ' ');
-            }
+            if(r.cause) r.cause = r.cause.replace(new RegExp('^' + escapeRegExp(comp) + ' ' + escapeRegExp(oldF) + ' '), comp + ' ' + newF + ' ');
         });
         renderFeaturesTab();
     }
-
     function renderFeaturesTab() {
         let html = '';
         components.forEach(c => { 
             html += `<div class="comp-group"><div class="comp-title">${c}</div>
-                <div class="input-group">
-                    <input type="text" id="featInp_${c.replace(/\s/g,'_')}" placeholder="Add Feature(s)..." onkeypress="handleEnter(event, () => addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}'))">
-                    <button onclick="addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}')">Add</button>
-                </div><ul style="margin-top:0;">`;
-            (featuresByComp[c]||[]).forEach(f => {
-                html += `<li><span>${f}</span><div class="action-buttons"><button class="btn-warning" onclick="renameFeature('${c}', '${f}')">✏️</button><button class="btn-danger" onclick="removeFeature('${c}', '${f}')">🗑️</button></div></li>`;
-            });
+                <div class="input-group"><input type="text" id="featInp_${c.replace(/\s/g,'_')}" placeholder="Add Feature(s)..." onkeypress="handleEnter(event, () => addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}'))">
+                <button onclick="addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}')">Add</button></div><ul style="margin-top:0;">`;
+            (featuresByComp[c]||[]).forEach(f => { html += `<li><span>${f}</span><div class="action-buttons"><button class="btn-warning" onclick="renameFeature('${c}', '${f}')">✏️</button><button class="btn-danger" onclick="removeFeature('${c}', '${f}')">🗑️</button></div></li>`; });
             html += `</ul></div>`;
         });
         document.getElementById('featuresContainer').innerHTML = html || '<em>Add components first in Tab 1.</em>';
         document.getElementById('btnContinueFromFeatures').style.display = components.length ? 'block' : 'none';
     }
 
-    // --- TAB 3: Matrix (With Pruning Logic) ---
+    // --- TAB 3: Matrix ---
+    function updateMatrixTotalRows() {
+        let total = 0;
+        components.forEach(c1 => {
+            components.forEach(c2 => {
+                if (c1 === c2) return;
+                (featuresByComp[c1] || []).forEach(f1 => {
+                    (featuresByComp[c2] || []).forEach(f2 => {
+                        let p = [`${c1}|${f1}`, `${c2}|${f2}`].sort().join('::');
+                        if (interfaces[p]) {
+                            let causes = 0;
+                            (dimsByFeature[`${c1}|${f1}`] || []).forEach(d => { causes += getExtremes(c1, f1, d).length; });
+                            total += causes === 0 ? 1 : causes;
+                        }
+                    });
+                });
+            });
+        });
+        document.getElementById('matrixTotalCount').innerText = total;
+    }
+
     function buildFeatureMatrix() {
         let allFeats = []; components.forEach(c => { (featuresByComp[c]||[]).forEach(f => allFeats.push({c, f})); });
         if(allFeats.length < 2) return document.getElementById('matrixContainer').innerHTML = '<em>Add at least two features across your components.</em>';
@@ -639,7 +749,6 @@
 
     function syncFeat(i, j, key, iface1, iface2) { 
         let isChecked = document.getElementById(`chk_${i}_${j}`).checked; 
-        
         if (!isChecked) {
             let popCount = getAffectedPopulatedRows(r => r.interface === iface1 || r.interface === iface2);
             if (popCount > 0 && !confirm(`Warning: Unchecking this specific interface will permanently delete ${popCount} filled row(s). Proceed?`)) {
@@ -647,18 +756,23 @@
             }
             workingTableData = workingTableData.filter(r => r.interface !== iface1 && r.interface !== iface2);
         }
-        
         document.getElementById(`chk_${j}_${i}`).checked = isChecked; 
         interfaces[key] = isChecked; 
+        updateMatrixTotalRows();
     }
 
-    // --- TAB 4: Dimensions (With Rename/Remove Logic) ---
+    // --- TAB 4: Dimensions & Feature Images ---
+    let currentFeatImageTarget = null;
+
     function addDimension(comp, feat, inputId) {
         let key = `${comp}|${feat}`; if(!dimsByFeature[key]) dimsByFeature[key] = [];
         document.getElementById(inputId).value.split(',').map(v => cleanName(v).toLowerCase()).filter(v => v).forEach(val => {
             if (!dimsByFeature[key].includes(val)) dimsByFeature[key].push(val);
         });
-        document.getElementById(inputId).value = ''; renderDimensionsTab();
+        document.getElementById(inputId).value = ''; 
+        renderDimensionsTab(); 
+        harvestDimensions(); // Force update background assignments so calculation works instantly
+        updateMatrixTotalRows();
     }
 
     function removeDimension(comp, feat, dim) {
@@ -668,7 +782,7 @@
         
         let key = `${comp}|${feat}`; dimsByFeature[key] = dimsByFeature[key].filter(x => x !== dim);
         workingTableData = workingTableData.filter(r => !(r.cause && rxCause.test(r.cause)));
-        renderDimensionsTab();
+        renderDimensionsTab(); harvestDimensions(); updateMatrixTotalRows();
     }
 
     function renameDimension(comp, feat, oldD) {
@@ -680,9 +794,7 @@
         dimsByFeature[key][dimsByFeature[key].indexOf(oldD)] = newD;
         
         let newSpecDims = {};
-        Object.keys(specificDimAssignments).forEach(k => { let [c, f, d] = k.split('|'); if(c === comp && f === feat && d === oldD) d = newD; newSpecDims[`${c}|${f}|${d}`] = specificDimAssignments[k]; });
-        specificDimAssignments = newSpecDims;
-        
+        Object.keys(specificDimAssignments).forEach(k => { let [c, f, d] = k.split('|'); if(c === comp && f === feat && d === oldD) d = newD; newSpecDims[`${c}|${f}|${d}`] = specificDimAssignments[k]; }); specificDimAssignments = newSpecDims;
         if(globalDimAssignments[oldD] && !globalDimAssignments[newD]) globalDimAssignments[newD] = globalDimAssignments[oldD];
         
         workingTableData.forEach(r => {
@@ -694,37 +806,125 @@
         renderDimensionsTab();
     }
 
+    // Feature Image Logic
+    function triggerFeatImageUpload(comp, feat) {
+        currentFeatImageTarget = `${comp}|${feat}`;
+        document.getElementById('featFileInput').click();
+    }
+    
+    function handleFeatImageUpload(e) {
+        let file = e.target.files[0]; if(!file || !currentFeatImageTarget) return; 
+        processImageFile(file, (dataUrl) => { 
+            addFeatImage(currentFeatImageTarget, dataUrl); 
+            document.getElementById('featFileInput').value = ''; 
+        });
+    }
+    
+    function addFeatImage(key, dataUrl) {
+        if(!featImages[key]) featImages[key] = [];
+        featImages[key].push({ dataUrl: dataUrl, descPreset: '', descDetails: '' }); 
+        renderDimensionsTab(); 
+    }
+    
+    function removeFeatImage(key, idx) {
+        if(featImages[key]) featImages[key].splice(idx, 1);
+        renderDimensionsTab();
+    }
+
+    function saveFeatImageDescs() {
+        Object.keys(featImages).forEach(key => {
+            featImages[key].forEach((img, i) => {
+                let p = document.getElementById(`fImgPre_${key.replace(/\s|\|/g,'_')}_${i}`);
+                let d = document.getElementById(`fImgDet_${key.replace(/\s|\|/g,'_')}_${i}`);
+                if(p) img.descPreset = p.value; if(d) img.descDetails = d.value;
+            });
+        });
+    }
+
     function renderDimensionsTab() {
+        saveFeatImageDescs(); 
         let html = '';
+        let opts = '<option value="">-- Desc Preset --</option>' + imgDescPresets.map(m => `<option value="${m}">${m}</option>`).join('');
+
         components.forEach(c => {
             if (featuresByComp[c] && featuresByComp[c].length) {
                 html += `<div class="comp-group"><div class="comp-title">${c}</div>`;
                 featuresByComp[c].forEach(f => {
                     let key = `${c}|${f}`; let inId = `dimInp_${c.replace(/\s/g,'_')}_${f.replace(/\s/g,'_')}`;
-                    html += `<div class="feat-group"><div class="feat-title">${f}</div>
+                    html += `<div class="feat-group" style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border);">
+                        <div class="feat-title" style="font-size: 16px; margin-bottom: 15px;">${f}</div>
+                        
                         <div class="input-group">
                             <input type="text" id="${inId}" placeholder="Add Dimension(s)..." onkeypress="handleEnter(event, () => addDimension('${c}', '${f}', '${inId}'))">
-                            <button onclick="addDimension('${c}', '${f}', '${inId}')">Add</button>
-                        </div><ul style="margin-top:0;">`;
+                            <button onclick="addDimension('${c}', '${f}', '${inId}')">Add Dim</button>
+                        </div>
+                        <ul style="margin-top:0; margin-bottom: 20px;">`;
                     (dimsByFeature[key]||[]).forEach(d => {
-                        html += `<li><span>${d}</span><div class="action-buttons"><button class="btn-warning" onclick="renameDimension('${c}', '${f}', '${d}')">✏️</button><button class="btn-danger" onclick="removeDimension('${c}', '${f}', '${d}')">🗑️</button></div></li>`;
+                        html += `<li style="background: var(--highlight-bg);"><span>${d}</span><div class="action-buttons"><button class="btn-warning" onclick="renameDimension('${c}', '${f}', '${d}')">✏️</button><button class="btn-danger" onclick="removeDimension('${c}', '${f}', '${d}')">🗑️</button></div></li>`;
                     });
-                    html += `</ul></div>`;
+                    html += `</ul>
+                        
+                        <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
+                            <strong style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Feature Reference Images</strong>
+                            <div class="paste-zone" tabindex="0" data-cf="${key}" onclick="triggerFeatImageUpload('${c}', '${f}')" style="padding: 10px; margin-top: 10px;">
+                                Click to upload, or select this box and press <strong>Ctrl+V</strong> to paste
+                            </div>
+                            <div id="featGallery_${key.replace(/\s|\|/g,'_')}">`;
+                    
+                    if(featImages[key] && featImages[key].length > 0) {
+                        featImages[key].forEach((img, i) => {
+                            let imgIdPrefix = `${key.replace(/\s|\|/g,'_')}_${i}`;
+                            html += `
+                            <div class="img-card" style="background: var(--highlight-bg);">
+                                <img src="${img.dataUrl}" class="img-thumb">
+                                <div class="img-details">
+                                    <select id="fImgPre_${imgIdPrefix}" onchange="saveFeatImageDescs()">${opts}</select>
+                                    <input type="text" id="fImgDet_${imgIdPrefix}" value="${img.descDetails}" placeholder="Specific details..." style="width:100%;" oninput="saveFeatImageDescs()">
+                                </div>
+                                <button class="btn-danger" onclick="removeFeatImage('${key}', ${i})">X</button>
+                            </div>`;
+                        });
+                    }
+                    
+                    html += `</div></div></div>`;
                 });
                 html += `</div>`;
             }
         });
         document.getElementById('dimensionsContainer').innerHTML = html || '<em>Add features first in Tab 2.</em>'; 
         document.getElementById('btnSaveDimensions').style.display = html ? 'block' : 'none';
+        
+        Object.keys(featImages).forEach(key => {
+            featImages[key].forEach((img, i) => {
+                let el = document.getElementById(`fImgPre_${key.replace(/\s|\|/g,'_')}_${i}`);
+                if(el) el.value = img.descPreset;
+            });
+        });
     }
 
-    // --- TAB 5: Settings ---
-    function harvestDimensions() {
-        let cg = new Set(), cs = new Set();
-        Object.keys(dimsByFeature).forEach(k => { (dimsByFeature[k]||[]).forEach(d => { cg.add(d); cs.add(`${k}|${d}`); }); });
-        let def = availablePresets.length ? `${availablePresets[0].ext1}|${availablePresets[0].ext2}` : "too high|too low";
-        cg.forEach(d => { if (!globalDimAssignments[d]) globalDimAssignments[d] = def; }); cs.forEach(k => { if (!specificDimAssignments[k]) specificDimAssignments[k] = def; });
+    function saveAllDimensions() {
+        saveFeatImageDescs(); harvestDimensions(); switchTab(5);
     }
+
+    // Global Paste Listener
+    document.addEventListener("paste", function(e) {
+        let items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf("image") !== -1) {
+                let blob = items[i].getAsFile(); 
+                let active = document.activeElement;
+                if (document.getElementById('tab4').classList.contains('active') && active && active.hasAttribute('data-cf')) {
+                    let targetCF = active.getAttribute('data-cf');
+                    processImageFile(blob, (dataUrl) => { addFeatImage(targetCF, dataUrl); }); 
+                } 
+                else if (document.getElementById('populateSection').style.display === 'block' && document.getElementById('subTabForm').classList.contains('active')) {
+                    processImageFile(blob, (dataUrl) => { addImageToRow(dataUrl); }); 
+                }
+            }
+        }
+    });
+
+    // --- TAB 5: Settings ---
     function toggleAssignMode() {
         let old = assignmentMode; assignmentMode = document.querySelector('input[name="assignMode"]:checked').value;
         if(old === 'global' && assignmentMode === 'specific') { Object.keys(specificDimAssignments).forEach(k => { let d = k.split('|')[2]; if (globalDimAssignments[d]) specificDimAssignments[k] = globalDimAssignments[d]; }); }
@@ -745,15 +945,15 @@
         document.getElementById('presetBody').innerHTML = availablePresets.map((p,i) => `<tr><td>${p.ext1}</td><td>${p.ext2}</td><td><button class="btn-danger" onclick="remPreset(${i})">Remove</button></td></tr>`).join('');
     }
     function updateAssign(m, k, v) { if (m === 'global') globalDimAssignments[k] = v; else specificDimAssignments[k] = v; }
-    function addPreset() { let e1 = document.getElementById('presetExt1').value.trim(), e2 = document.getElementById('presetExt2').value.trim(); if(!e1||!e2) return; availablePresets.push({ext1:e1, ext2:e2}); document.getElementById('presetExt1').value=''; document.getElementById('presetExt2').value=''; harvestDimensions(); renderSettingsTab(); }
-    function remPreset(i) { let r = `${availablePresets[i].ext1}|${availablePresets[i].ext2}`; availablePresets.splice(i,1); harvestDimensions(); renderSettingsTab(); }
+    function addPreset() { let e1 = document.getElementById('presetExt1').value.trim(), e2 = document.getElementById('presetExt2').value.trim(); if(!e1||!e2) return; availablePresets.push({ext1:e1, ext2:e2}); document.getElementById('presetExt1').value=''; document.getElementById('presetExt2').value=''; harvestDimensions(); renderSettingsTab(); updateMatrixTotalRows(); }
+    function remPreset(i) { let r = `${availablePresets[i].ext1}|${availablePresets[i].ext2}`; availablePresets.splice(i,1); harvestDimensions(); renderSettingsTab(); updateMatrixTotalRows(); }
 
     function addMechPreset() { document.getElementById('mechInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!mechPresets.includes(v)) mechPresets.push(v); }); document.getElementById('mechInput').value=''; renderMechPresets(); }
     function remMechPreset(i) { mechPresets.splice(i, 1); renderMechPresets(); }
     function renderMechPresets() { document.getElementById('mechList').innerHTML = mechPresets.map((m,i) => `<li>${m} <button class="btn-danger" onclick="remMechPreset(${i})">X</button></li>`).join(''); }
 
-    function addImgDescPreset() { document.getElementById('imgDescInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!imgDescPresets.includes(v)) imgDescPresets.push(v); }); document.getElementById('imgDescInput').value=''; renderImgDescPresets(); }
-    function remImgDescPreset(i) { imgDescPresets.splice(i, 1); renderImgDescPresets(); }
+    function addImgDescPreset() { document.getElementById('imgDescInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!imgDescPresets.includes(v)) imgDescPresets.push(v); }); document.getElementById('imgDescInput').value=''; renderImgDescPresets(); renderDimensionsTab(); }
+    function remImgDescPreset(i) { imgDescPresets.splice(i, 1); renderImgDescPresets(); renderDimensionsTab(); }
     function renderImgDescPresets() { document.getElementById('imgDescList').innerHTML = imgDescPresets.map((m,i) => `<li>${m} <button class="btn-danger" onclick="remImgDescPreset(${i})">X</button></li>`).join(''); }
 
     // --- TAB 6: Generate & Smart Merge ---
@@ -779,15 +979,30 @@
         const tb = document.getElementById('previewBody'); tb.innerHTML = '';
         if (workingTableData && workingTableData.length > 0) {
             document.getElementById('btnClearData').style.display = 'inline-block';
-            workingTableData.forEach((r) => {
+            
+            let limit = parseInt(document.getElementById('previewLimit').value) || 25;
+            document.getElementById('previewTotalCount').innerText = workingTableData.length;
+            
+            let dataToDisplay = workingTableData.slice(0, limit);
+            
+            dataToDisplay.forEach((r) => {
                 let mechStr = r.mechPreset ? (r.mechDetails ? `${r.mechPreset} - ${r.mechDetails}` : r.mechPreset) : (r.mechDetails || "");
                 let imgCount = r.images ? r.images.length : 0;
                 tb.innerHTML += `<tr><td><strong>${r.interface}</strong></td><td>${r.mode||""}</td><td>${r.effect||""}</td><td>${r.cause}</td><td>${mechStr}</td><td>${r.sev||""}</td><td>${r.occ||""}</td><td>${r.det||""}</td><td><span style="color:${r.rpn >= 100 ? '#ef4444' : r.rpn >= 50 ? '#f59e0b' : 'inherit'}; font-weight:bold;">${r.rpn||""}</span></td><td>${imgCount > 0 ? imgCount + ' img' : ''}</td></tr>`;
             });
         } else {
             document.getElementById('btnClearData').style.display = 'none'; generateData();
+            document.getElementById('previewTotalCount').innerText = finalTableData.length - 1;
+            
             if(finalTableData.length <= 1) tb.innerHTML = '<tr><td colspan="10">Empty.</td></tr>';
-            else { for(let i=1; i<finalTableData.length; i++) { let r=finalTableData[i]; tb.innerHTML += `<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td></td></tr>`; } }
+            else { 
+                let limit = parseInt(document.getElementById('previewLimit').value) || 25;
+                let rowsToRender = Math.min(limit + 1, finalTableData.length);
+                for(let i=1; i<rowsToRender; i++) { 
+                    let r=finalTableData[i]; 
+                    tb.innerHTML += `<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td></td></tr>`; 
+                } 
+            }
         }
     }
     
@@ -795,7 +1010,7 @@
 
     function startPopulating() {
         generateData(); 
-        if(finalTableData.length <= 1) return alert("Nothing to populate. Please define parts and dimensions.");
+        if(finalTableData.length <= 1) return alert("Nothing to populate. Please check your Matrix and Dimensions.");
         
         let newWorkingData = finalTableData.slice(1).map(r => ({ 
             interface: r[0], mode: r[1], effect: r[2], cause: r[3], 
@@ -897,22 +1112,10 @@
     function navigatePopulate(dir) { saveCurrentRowData(); let n = populateIndex + dir; if(n>=0 && n<workingTableData.length) { populateIndex = n; renderPopulateStep(); } }
     function duplicateCurrentRow() { saveCurrentRowData(); let c = workingTableData[populateIndex]; workingTableData.splice(populateIndex+1, 0, { ...c, mode:'', effect:'', sev:'', occ:'', det:'', rpn:'', mechPreset:'', mechDetails:'', images:[] }); populateIndex++; renderPopulateStep(); }
 
-    // --- Images ---
-    document.addEventListener("paste", function(e) {
-        if (document.getElementById('populateSection').style.display === 'block' && document.getElementById('subTabForm').classList.contains('active')) {
-            let items = e.clipboardData.items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf("image") !== -1) {
-                    let blob = items[i].getAsFile(); let reader = new FileReader();
-                    reader.onload = function(event) { addImageToRow(event.target.result); }; reader.readAsDataURL(blob);
-                }
-            }
-        }
-    });
-
+    // --- Tab 6 Row Images ---
     function handleImageUpload(e) {
-        let file = e.target.files[0]; if(!file) return; let reader = new FileReader();
-        reader.onload = function(event) { addImageToRow(event.target.result); document.getElementById('fileInput').value = ''; }; reader.readAsDataURL(file);
+        let file = e.target.files[0]; if(!file) return; 
+        processImageFile(file, (dataUrl) => { addImageToRow(dataUrl); document.getElementById('fileInput').value = ''; });
     }
     function addImageToRow(dataUrl) { let r = workingTableData[populateIndex]; if(!r.images) r.images = []; r.images.push({ dataUrl: dataUrl, descPreset: '', descDetails: '' }); renderImageGallery(); }
     function removeImage(imgIdx) { workingTableData[populateIndex].images.splice(imgIdx, 1); renderImageGallery(); }
@@ -940,12 +1143,14 @@
     // --- Export ZIP ---
     async function exportZip() {
         if (!workingTableData || workingTableData.length === 0) return alert("Please fill out data in the browser first.");
-        saveCurrentRowData(); showLoading("Compiling your ZIP package...", 0);
+        saveCurrentRowData(); saveFeatImageDescs();
+        showLoading("Compiling your ZIP package... (Depending on image count, this may take a moment)", 0);
         
         setTimeout(async () => {
-            let zip = new JSZip(); let imgFolder = zip.folder("images");
-            let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN", "Attached Images", "Image Descriptions"]];
+            let zip = new JSZip(); let imgFolder = zip.folder("images"); let featImgFolder = zip.folder("images/features");
             
+            // 1. Compile Main Excel Sheet
+            let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN", "Attached Images", "Image Descriptions"]];
             workingTableData.forEach((r, idx) => {
                 let mechStr = r.mechPreset ? (r.mechDetails ? `${r.mechPreset} - ${r.mechDetails}` : r.mechPreset) : (r.mechDetails || "");
                 let imgFileNames = []; let imgDescStrings = [];
@@ -962,6 +1167,19 @@
             });
             const ws = XLSX.utils.aoa_to_sheet(exportData); ws['!cols'] = [{wch:25},{wch:20},{wch:20},{wch:30},{wch:20},{wch:5},{wch:5},{wch:5},{wch:5},{wch:25},{wch:40}];
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DFMEA");
+            
+            // 2. Hide Feature Images in zip (for PDF compiler context)
+            Object.keys(featImages).forEach(key => {
+                featImages[key].forEach((img, idx) => {
+                    let base64Data = img.dataUrl.split(',')[1]; let ext = img.dataUrl.substring("data:image/".length, img.dataUrl.indexOf(";base64"));
+                    let safeName = key.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_");
+                    featImgFolder.file(`Feat_${safeName}_${idx+1}.${ext}`, base64Data, {base64: true});
+                });
+            });
+
+            // 3. Create Session JSON
+            const sessionData = { components, featuresByComp, interfaces, dimsByFeature, featImages, availablePresets, mechPresets, imgDescPresets, assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData };
+            zip.file("dfmea_session.json", JSON.stringify(sessionData));
             const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }); zip.file("DFMEA_Table.xlsx", excelBuffer);
             
             zip.generateAsync({type:"blob"}, function updateCallback(metadata) { showLoading(`Zipping files: ${metadata.percent.toFixed(0)}%`, metadata.percent); }).then(function(content) {
@@ -971,35 +1189,31 @@
         }, 50);
     }
 
-    // --- TAB 7: PDF GENERATION ---
+    // --- TAB 7: BEAUTIFUL PDF GENERATION ---
     async function handleZipUploadForPDF(event) {
         const file = event.target.files[0]; if(!file) return;
-        document.getElementById('pdfStatus').style.display = 'none'; document.getElementById('btnDownloadPDF').style.display = 'none'; showLoading("Extracting ZIP contents...");
+        document.getElementById('pdfStatus').style.display = 'none'; document.getElementById('pdfSettings').style.display = 'none'; showLoading("Extracting ZIP contents...");
 
         try {
             let zipFiles = await JSZip.loadAsync(file);
-            let excelFile = zipFiles.file("DFMEA_Table.xlsx"); if (!excelFile) throw new Error("Could not find DFMEA_Table.xlsx in the ZIP.");
-            let excelData = await excelFile.async("arraybuffer");
-            let wb = XLSX.read(new Uint8Array(excelData), {type: 'array'});
-            let jsonRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
+            let sessionFile = zipFiles.file("dfmea_session.json");
+            if (!sessionFile) throw new Error("Could not find internal data (dfmea_session.json) in ZIP. Ensure you used the latest Export button.");
             
-            let parsedRows = jsonRows.slice(1).map(r => ({
-                interface: r[0]||"", mode: r[1]||"", effect: r[2]||"", cause: r[3]||"", mech: r[4]||"",
-                sev: r[5]||"", occ: r[6]||"", det: r[7]||"", rpn: r[8]||"",
-                imgFiles: (r[9]||"").split(', ').filter(x=>x), imgDescs: (r[10]||"").split(' | ').filter(x=>x)
-            }));
+            let sessionJson = JSON.parse(await sessionFile.async("string"));
+            let parsedRows = sessionJson.workingTableData || [];
+            let parsedFeatImages = sessionJson.featImages || {};
 
-            let imageMap = {};
-            for (let filename in zipFiles.files) {
-                if (filename.startsWith("images/") && !zipFiles.files[filename].dir) {
-                    let base64 = await zipFiles.files[filename].async("base64");
-                    let ext = filename.split('.').pop().toLowerCase(); let mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
-                    imageMap[filename.replace('images/', '')] = `data:${mime};base64,${base64}`;
-                }
-            }
-            pdfGenerationData = { rows: parsedRows, imageMap: imageMap };
-            document.getElementById('pdfRowCount').innerText = parsedRows.length; document.getElementById('pdfImgCount').innerText = Object.keys(imageMap).length;
-            document.getElementById('pdfStatus').style.display = 'block'; document.getElementById('btnDownloadPDF').style.display = 'block';
+            let blankCount = parsedRows.filter(r => !isRowPopulated(r)).length;
+            document.getElementById('blankRowCount').innerText = blankCount;
+
+            pdfGenerationData = { rows: parsedRows, featImages: parsedFeatImages };
+            
+            document.getElementById('pdfRowCount').innerText = parsedRows.length; 
+            document.getElementById('pdfImgCount').innerText = Object.keys(zipFiles.files).filter(k => k.startsWith("images/") && !zipFiles.files[k].dir).length;
+            
+            document.getElementById('pdfStatus').style.display = 'block'; 
+            document.getElementById('pdfSettings').style.display = 'block';
+
         } catch (err) { alert("Failed to parse ZIP. " + err.message); } finally { hideLoading(); }
         document.getElementById('pdfZipInput').value = '';
     }
@@ -1007,50 +1221,125 @@
     function generatePDFReport() {
         if (!pdfGenerationData || pdfGenerationData.rows.length === 0) return; showLoading("Generating high-resolution PDF... This may take several seconds.");
         setTimeout(() => {
-            let rows = pdfGenerationData.rows; let images = pdfGenerationData.imageMap; let content = [];
             
+            const titleInput = document.getElementById('pdfTitleInput').value || 'DFMEA REPORT';
+            const tocStyle = document.querySelector('input[name="pdfTocStyle"]:checked').value;
+            const doGroupTOC = (tocStyle === 'grouped');
+            const doShowRPN = (tocStyle === 'rpn');
+            const doSortRPN = document.getElementById('pdfSortRPN').checked;
+            const doSkipBlank = document.getElementById('pdfSkipBlank').checked;
+
+            let processRows = [];
+            pdfGenerationData.rows.forEach((r, i) => { r.oIndex = i; processRows.push(r); });
+            if (doSkipBlank) processRows = processRows.filter(isRowPopulated);
+            if (doSortRPN) { processRows.sort((a, b) => { return (parseInt(b.rpn) || -1) - (parseInt(a.rpn) || -1); }); }
+
+            let featImgs = pdfGenerationData.featImages;
+            let content = [];
+            
+            // 1. Cover Page
             content.push({ text: 'Design Failure Mode and Effects Analysis', style: 'coverSubtitle', margin: [0, 150, 0, 10], alignment: 'center' });
-            content.push({ text: 'DFMEA REPORT', style: 'coverTitle', margin: [0, 0, 0, 20], alignment: 'center' });
+            content.push({ text: titleInput, style: 'coverTitle', margin: [0, 0, 0, 20], alignment: 'center' });
             content.push({ canvas: [{ type: 'line', x1: 150, y1: 0, x2: 365, y2: 0, lineWidth: 2, lineColor: '#2563eb' }], margin: [0, 0, 0, 40] });
             content.push({ text: `Generated on ${new Date().toLocaleDateString()}`, style: 'coverDate', alignment: 'center', margin: [0, 0, 0, 100] });
             content.push({ text: '', pageBreak: 'after' });
 
+            // 2. Table of Contents
             content.push({ text: 'Table of Contents', style: 'header', margin: [0, 0, 0, 20] });
+            
+            let hasFeatImages = false; Object.keys(featImgs).forEach(k => { if(featImgs[k].length > 0) hasFeatImages = true; });
+            if (hasFeatImages) {
+                content.push({ text: 'Component Feature References', style: 'tocComp', margin: [0, 15, 0, 10] });
+                Object.keys(featImgs).forEach(key => {
+                    if (featImgs[key].length > 0) {
+                        let [c, f] = key.split('|');
+                        content.push({ text: `• ${c} - ${f}`, linkToDestination: `featImg_${key.replace(/\s|\|/g,'_')}`, style: 'tocItem', margin: [15, 3, 0, 3] });
+                    }
+                });
+                content.push({ text: '', margin: [0, 0, 0, 15] });
+            }
+
             let tree = {};
-            rows.forEach((r, i) => {
+            processRows.forEach((r) => {
                 let match = r.interface.match(/(.+) \((.+)\) - (.+ \(.+\))/);
                 let comp = match ? match[1] : "Other"; let feat = match ? match[2] : "-";
                 if (!tree[comp]) tree[comp] = {}; if (!tree[comp][feat]) tree[comp][feat] = [];
-                tree[comp][feat].push({ index: i, interface: r.interface });
+                tree[comp][feat].push(r);
             });
 
             for (let comp in tree) {
                 content.push({ text: comp, style: 'tocComp', margin: [0, 15, 0, 5] });
                 for (let feat in tree[comp]) {
                     content.push({ text: `• ${feat}`, style: 'tocFeat', margin: [15, 5, 0, 5] });
-                    tree[comp][feat].forEach(item => {
-                        content.push({ text: `Row ${item.index + 1}: vs. ${item.interface.split(' - ')[1]}`, linkToDestination: `row_${item.index}`, style: 'tocItem', margin: [35, 3, 0, 3] });
-                    });
+                    
+                    if (doGroupTOC) {
+                        let targetGroups = {};
+                        tree[comp][feat].forEach(r => {
+                            let match = r.interface.match(/.+ \(.*?\) - (.+ \(.+\))/); let target = match ? match[1] : r.interface;
+                            if(!targetGroups[target]) targetGroups[target] = []; targetGroups[target].push(r);
+                        });
+                        Object.keys(targetGroups).forEach(target => {
+                            let grp = targetGroups[target]; let firstR = grp[0]; let textStr = `vs. ${target} (${grp.length} row${grp.length>1?'s':''})`;
+                            if (!doSortRPN) { 
+                                let min = Math.min(...grp.map(r=>r.oIndex)); let max = Math.max(...grp.map(r=>r.oIndex));
+                                if (max - min === grp.length - 1) textStr = `vs. ${target} [Rows ${min+1}-${max+1}]`;
+                            }
+                            content.push({ text: textStr, linkToDestination: `row_${firstR.oIndex}`, style: 'tocItem', margin: [35, 3, 0, 3] });
+                        });
+                    } else {
+                        tree[comp][feat].forEach(r => {
+                            let txt = `Row ${r.oIndex + 1}: vs. ${r.interface.split(' - ')[1]}`; if(doShowRPN) txt += `  [RPN: ${r.rpn || '-'}]`;
+                            content.push({ text: txt, linkToDestination: `row_${r.oIndex}`, style: 'tocItem', margin: [35, 3, 0, 3] });
+                        });
+                    }
                     content.push({ text: '', margin: [0, 0, 0, 8] });
                 }
             }
             content.push({ text: '', pageBreak: 'after' });
 
-            rows.forEach((r, i) => {
-                content.push({ text: `Row ${i + 1} Detail`, id: `row_${i}`, style: 'header', margin: [0, 0, 0, 15] });
+            // 3. Feature Reference Images Pages
+            if (hasFeatImages) {
+                Object.keys(featImgs).forEach(key => {
+                    let imgs = featImgs[key];
+                    if (imgs.length > 0) {
+                        let [c, f] = key.split('|');
+                        imgs.forEach((img, imgIndex) => {
+                            content.push({ text: '', pageBreak: 'before', id: imgIndex === 0 ? `featImg_${key.replace(/\s|\|/g,'_')}` : null });
+                            content.push({ text: `${c} • ${f} (Reference)`, style: 'header', margin: [0, 0, 0, 20] });
+                            content.push({ image: img.dataUrl, width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
+                            let desc = img.descPreset ? (img.descDetails ? `${img.descPreset}: ${img.descDetails}` : img.descPreset) : (img.descDetails || "");
+                            if (desc) content.push({ text: desc, alignment: 'center', italics: true, color: '#475569', fontSize: 10, margin: [0, 0, 0, 20] });
+                        });
+                    }
+                });
+                content.push({ text: '', pageBreak: 'after' });
+            }
+
+            // 4. Row Pages
+            processRows.forEach((r, i) => {
+                let match = r.interface.match(/(.+) \(.*?\) - (.+) \(.*?\)/);
+                let compText = match ? `${match[1]} to ${match[2]}` : r.interface;
+
+                content.push({ 
+                    text: [ `Row ${r.oIndex + 1}\n`, { text: compText, fontSize: 16, color: '#475569' } ], 
+                    id: `row_${r.oIndex}`, style: 'header', margin: [0, 0, 0, 15] 
+                });
+                
+                let mechStr = r.mechPreset ? (r.mechDetails ? `${r.mechPreset} - ${r.mechDetails}` : r.mechPreset) : (r.mechDetails || "-");
+                
                 content.push({
                     table: {
                         widths: ['30%', '70%'],
                         body: [
                             [{text: 'Component Interface', style: 'th'}, {text: r.interface, style: 'td'}],
                             [{text: 'Potential Cause', style: 'th'}, {text: r.cause, style: 'td'}],
-                            [{text: 'Failure Mechanism', style: 'th'}, {text: r.mech || '-', style: 'td'}],
+                            [{text: 'Failure Mechanism', style: 'th'}, {text: mechStr, style: 'td'}],
                             [{text: 'Failure Mode', style: 'th'}, {text: r.mode || '-', style: 'td'}],
                             [{text: 'Effect of Failure', style: 'th'}, {text: r.effect || '-', style: 'td'}],
                             [{text: 'Severity (S)', style: 'th'}, {text: r.sev || '-', style: 'tdNum'}],
                             [{text: 'Occurrence (O)', style: 'th'}, {text: r.occ || '-', style: 'tdNum'}],
                             [{text: 'Detection (D)', style: 'th'}, {text: r.det || '-', style: 'tdNum'}],
-                            [{text: 'Risk Priority Number', style: 'th'}, {text: r.rpn || '-', style: 'tdRpn', color: r.rpn >= 100 ? '#ef4444' : '#0f172a'}]
+                            [{text: 'Risk Priority Number', style: 'th'}, {text: r.rpn || '-', style: 'tdRpn', color: parseInt(r.rpn) >= 100 ? '#ef4444' : '#0f172a'}]
                         ]
                     },
                     layout: {
@@ -1061,24 +1350,31 @@
                     }, margin: [0, 0, 0, 20]
                 });
 
-                if (r.imgFiles && r.imgFiles.length > 0) {
-                    r.imgFiles.forEach((filename) => {
-                        if (images[filename]) {
-                            content.push({ text: '', pageBreak: 'before' });
-                            content.push({ table: { widths: ['*'], body: [ [ {text: `Attachment: Row ${i + 1}`, style: 'attachHeader'} ] ] }, layout: 'noBorders', margin: [0, 0, 0, 20] });
-                            let desc = r.imgDescs.find(d => d.startsWith(`[${filename}]`));
-                            if (desc) desc = desc.replace(`[${filename}] `, ''); else desc = "No description provided.";
-                            content.push({ image: images[filename], width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
-                            content.push({ text: desc, alignment: 'center', italics: true, color: '#475569', fontSize: 10 });
+                if (r.images && r.images.length > 0) {
+                    r.images.forEach((img) => {
+                        content.push({ text: '', pageBreak: 'before' });
+                        content.push({ text: `Attachment: Row ${r.oIndex + 1}`, style: 'header', margin: [0, 0, 0, 10] });
+                        
+                        let desc = img.descPreset ? (img.descDetails ? `${img.descPreset}: ${img.descDetails}` : img.descPreset) : (img.descDetails || "No description provided.");
+                        let descParts = desc.split(': ');
+                        let preset = descParts[0]; let caption = descParts.slice(1).join(': ') || preset;
+
+                        if (descParts.length > 1) {
+                            content.push({ text: preset, style: 'subheader', margin: [0, 0, 0, 15] });
+                            content.push({ image: img.dataUrl, width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
+                            content.push({ text: caption, style: 'caption', alignment: 'center', margin: [0, 0, 0, 20] });
+                        } else {
+                            content.push({ image: img.dataUrl, width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
+                            content.push({ text: desc, style: 'caption', alignment: 'center', margin: [0, 0, 0, 20] });
                         }
                     });
                 }
-                if (i < rows.length - 1) content.push({ text: '', pageBreak: 'after' });
+                if (i < processRows.length - 1) content.push({ text: '', pageBreak: 'after' });
             });
 
             let docDefinition = {
-                pageSize: 'A4', pageMargins: [40, 60, 40, 60], info: { title: 'DFMEA Report' },
-                header: function(currentPage) { if(currentPage === 1) return null; return { text: 'DFMEA Report', margin: [40, 20, 40, 0], color: '#94a3b8', fontSize: 9, bold: true }; },
+                pageSize: 'A4', pageMargins: [40, 60, 40, 60], info: { title: titleInput },
+                header: function(currentPage) { if(currentPage === 1) return null; return { text: titleInput, margin: [40, 20, 40, 0], color: '#94a3b8', fontSize: 9, bold: true }; },
                 footer: function(currentPage, pageCount) { if(currentPage === 1) return null; return { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', margin: [0, 20, 40, 0], color: '#64748b', fontSize: 9 }; },
                 content: content,
                 styles: {
@@ -1086,6 +1382,8 @@
                     coverSubtitle: { fontSize: 14, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 },
                     coverDate: { fontSize: 12, color: '#94a3b8' },
                     header: { fontSize: 20, bold: true, color: '#0f172a', borderBottom: '2px solid #e2e8f0' },
+                    subheader: { fontSize: 16, bold: true, color: '#334155' },
+                    caption: { fontSize: 14, bold: true, color: '#475569', italics: true },
                     th: { bold: true, fillColor: '#1e3a8a', color: 'white', alignment: 'left' },
                     td: { alignment: 'left', color: '#334155' },
                     tdNum: { alignment: 'center', color: '#334155', bold: true },
