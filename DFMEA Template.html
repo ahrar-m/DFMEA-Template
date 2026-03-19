@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DFMEA Generator Helper (Secure Single-File Mode)</title>
+    <title>DFMEA Generator Helper (Secure Offline Mode)</title>
     
     <script>
         /*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
@@ -58,6 +58,7 @@
         };
     </script>
 
+    
     <style>
         /* DARK MODE DEFAULT VARIABLES */
         :root { 
@@ -125,7 +126,7 @@
         button:hover { background-color: var(--primary-hover); }
         .btn-success { background-color: #16a34a; } .btn-success:hover { background-color: #15803d; }
         .btn-danger { background-color: #ef4444; padding: 4px 8px; font-size: 12px; }
-        .btn-warning { background-color: #f59e0b; color: white; } .btn-info { background-color: #0ea5e9; color: white; }
+        .btn-warning { background-color: #f59e0b; color: white; padding: 4px 8px; font-size: 12px; } .btn-info { background-color: #0ea5e9; color: white; }
         .btn-save-large { width: 100%; max-width: 630px; padding: 12px; font-size: 16px; margin-top: 10px; }
         .btn-outline { background-color: transparent; border: 2px solid var(--border); color: var(--text-main); }
         .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
@@ -183,13 +184,14 @@
         .pdf-drop-zone { border: 3px dashed var(--primary); background: var(--highlight-bg); padding: 40px; text-align: center; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
         .pdf-drop-zone:hover { background: var(--info-bg); }
 
-        /* LOADING OVERLAY CSS */
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         body.light-mode .loading-overlay { background: rgba(255,255,255,0.9); }
         .loading-spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .loading-bar-wrapper { width: 300px; height: 10px; background: var(--border); border-radius: 5px; margin-top: 15px; overflow: hidden; display: none; }
         .loading-bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.1s; }
+        
+        .action-buttons { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
@@ -197,9 +199,7 @@
 <div id="loadingOverlay" class="loading-overlay" style="display: none;">
     <div class="loading-spinner"></div>
     <h2 id="loadingText" style="margin:0; color: var(--text-heading);">Processing...</h2>
-    <div class="loading-bar-wrapper" id="loadingBarWrapper">
-        <div id="loadingBarFill" class="loading-bar-fill"></div>
-    </div>
+    <div class="loading-bar-wrapper" id="loadingBarWrapper"><div id="loadingBarFill" class="loading-bar-fill"></div></div>
 </div>
 
 <div class="container">
@@ -221,32 +221,35 @@
     <div id="tab1" class="tab-content active">
         <h2>Define Components</h2>
         <div class="input-group"><input type="text" id="compInput" placeholder="e.g., Holder, Base" style="width: 300px;" onkeypress="handleEnter(event, addComponent)"><button onclick="addComponent()">Add Component(s)</button></div>
-        <ul id="compList"></ul><button class="btn-success" onclick="switchTab(2)">Continue ➔</button>
+        <ul id="compList"></ul>
+        <button class="btn-success btn-save-large" onclick="switchTab(2)">Continue to Features ➔</button>
     </div>
 
     <div id="tab2" class="tab-content">
         <h2>Component Features</h2>
+        <span class="hint">Use the input box to add new features to your components.</span>
         <div id="featuresContainer"></div>
-        <button class="btn-success btn-save-large" onclick="saveAllFeatures()" id="btnSaveFeatures" style="display:none;">💾 Save Features & Build Matrix ➔</button>
+        <button class="btn-success btn-save-large" onclick="switchTab(3)" id="btnContinueFromFeatures" style="display:none;">Continue to Matrix ➔</button>
     </div>
 
     <div id="tab3" class="tab-content">
         <h2>Feature-to-Feature Matrix</h2>
         <div id="matrixContainer" class="matrix-wrapper"></div>
-        <button class="btn-success btn-save-large" onclick="switchTab(4)" id="btnContinueFromMatrix" style="display:none; margin-top: 20px;">Continue ➔</button>
+        <button class="btn-success btn-save-large" onclick="switchTab(4)" id="btnContinueFromMatrix" style="display:none; margin-top: 20px;">Continue to Dimensions ➔</button>
     </div>
 
     <div id="tab4" class="tab-content">
         <h2>Feature Dimensions</h2>
+        <span class="hint">Use the input box to add measurable dimensions to your features.</span>
         <div id="dimensionsContainer"></div>
-        <button class="btn-success btn-save-large" onclick="saveAllDimensions()" id="btnSaveDimensions" style="display:none;">💾 Save Dimensions & Assign Presets ➔</button>
+        <button class="btn-success btn-save-large" onclick="switchTab(5)" id="btnContinueFromDimensions" style="display:none;">Continue to Settings ➔</button>
     </div>
 
     <div id="tab5" class="tab-content">
         <h2>Session Management</h2>
         <div class="input-group">
             <button class="btn-info" onclick="exportSession()">💾 Save Session (.json)</button>
-            <button class="btn-warning" onclick="document.getElementById('importFile').click()">📂 Load Session (.json)</button>
+            <button class="btn-warning" style="font-size: 14px;" onclick="document.getElementById('importFile').click()">📂 Load Session (.json)</button>
             <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importSession(event)">
         </div>
         <div class="section-divider"></div>
@@ -300,7 +303,7 @@
                 <button class="btn-primary" onclick="startPopulating()">📝 Fill out Rows / Attach Images</button>
                 <button class="btn-success" onclick="exportZip()">📦 Export ZIP (Excel + Images)</button>
                 <button class="btn-outline" onclick="generatePreview()">↻ Refresh Grid</button>
-                <button class="btn-danger" onclick="clearPopulatedData()" id="btnClearData" style="display:none;">🗑️ Clear Data</button>
+                <button class="btn-danger" style="font-size: 14px;" onclick="clearPopulatedData()" id="btnClearData" style="display:none;">🗑️ Clear Data</button>
             </div>
             <div class="table-responsive" style="margin-top: 20px;">
                 <table id="previewTable">
@@ -319,7 +322,7 @@
                 <div>
                     <input type="number" id="jumpInput" placeholder="Row #" style="width: 80px; padding: 6px;">
                     <button class="btn-info" onclick="jumpToRowInput()" style="padding: 6px 12px;">Jump</button>
-                    <button class="btn-danger" onclick="exitPopulating()" style="margin-left: 15px;">Stop & Go Back</button>
+                    <button class="btn-danger" style="font-size: 14px; margin-left: 15px;" onclick="exitPopulating()">Stop & Go Back</button>
                 </div>
             </div>
             
@@ -357,7 +360,7 @@
 
                     <div style="margin-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                         <button class="btn-outline" onclick="navigatePopulate(-1)">⬅ Previous</button>
-                        <button class="btn-warning" onclick="duplicateCurrentRow()">+ Duplicate Row</button>
+                        <button class="btn-warning" style="font-size: 14px;" onclick="duplicateCurrentRow()">+ Duplicate Row</button>
                         <button class="btn-primary" onclick="navigatePopulate(1)" id="btnNextRow">Next ➔</button>
                     </div>
                 </div>
@@ -390,22 +393,24 @@
 </div>
 
 <script>
+    // --- String Escaping for Safe Regex ---
+    function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    function cleanName(str) { return str.replace(/[|():\-]/g, '').trim(); }
+
     // --- THEME TOGGLE ---
     function toggleTheme() {
-        const body = document.body;
-        body.classList.toggle('light-mode');
+        const body = document.body; body.classList.toggle('light-mode');
         const isLight = body.classList.contains('light-mode');
         document.getElementById('themeBtn').innerText = isLight ? '🌙 Dark Mode' : '☀️ Light Mode';
         localStorage.setItem('dfmea-theme', isLight ? 'light' : 'dark');
         if(document.getElementById('populateSection').style.display === 'block') { saveCurrentRowData(); }
     }
-
     window.addEventListener('DOMContentLoaded', () => {
         const savedTheme = localStorage.getItem('dfmea-theme');
         if (savedTheme === 'light') { document.body.classList.add('light-mode'); document.getElementById('themeBtn').innerText = '🌙 Dark Mode'; }
     });
 
-    // --- UI LOADING HELPER ---
+    // --- UI LOADING ---
     function showLoading(text, percent) {
         document.getElementById('loadingOverlay').style.display = 'flex';
         document.getElementById('loadingText').innerText = text || 'Processing...';
@@ -428,26 +433,33 @@
         });
     }
 
-    // --- State Data ---
     let availablePresets = [{ ext1: 'too high', ext2: 'too low' }, { ext1: 'too large', ext2: 'too small' }];
     let mechPresets = []; let imgDescPresets = []; 
     let components = []; let featuresByComp = {}; let interfaces = {}; let dimsByFeature = {};  
     let assignmentMode = 'global'; let globalDimAssignments = {}; let specificDimAssignments = {}; 
     let finalTableData = []; let workingTableData = []; let populateIndex = 0;
-    
     let pdfGenerationData = { rows: [], imageMap: {} };
     populateSelects();
 
-    // --- Utility ---
+    // --- Safety Checks for Deletion ---
+    function isRowPopulated(r) {
+        return (r.mode || r.effect || r.mechPreset || r.mechDetails || r.sev || r.occ || r.det || (r.images && r.images.length > 0));
+    }
+    function getAffectedPopulatedRows(predicate) {
+        return workingTableData.filter(predicate).filter(isRowPopulated).length;
+    }
+
+    // --- Core Navigation ---
     function handleEnter(e, func) { if (e.key === 'Enter') { e.preventDefault(); func(); } }
     function switchTab(step) {
         for (let i = 1; i <= 7; i++) { document.getElementById(`tab${i}`).classList.remove('active'); document.getElementById(`btnTab${i}`).classList.remove('active'); }
         document.getElementById(`tab${step}`).classList.add('active'); document.getElementById(`btnTab${step}`).classList.add('active');
-        if (step === 2) renderFeaturesTab(); if (step === 3) buildFeatureMatrix(); if (step === 4) renderDimensionsTab();
-        if (step === 5) { renderSettingsTab(); renderMechPresets(); renderImgDescPresets(); }
+        if (step === 2) renderFeaturesTab(); 
+        if (step === 3) { buildFeatureMatrix(); harvestDimensions(); } 
+        if (step === 4) renderDimensionsTab();
+        if (step === 5) { harvestDimensions(); renderSettingsTab(); renderMechPresets(); renderImgDescPresets(); }
         if (step === 6) { document.getElementById('previewSection').style.display = 'block'; document.getElementById('populateSection').style.display = 'none'; generatePreview(); }
     }
-    
     function switchSubTab(target) {
         document.getElementById('btnSubForm').classList.remove('active'); document.getElementById('btnSubIndex').classList.remove('active');
         document.getElementById('subTabForm').classList.remove('active'); document.getElementById('subTabIndex').classList.remove('active');
@@ -455,7 +467,7 @@
         else { document.getElementById('btnSubIndex').classList.add('active'); document.getElementById('subTabIndex').classList.add('active'); renderGroupedRowRanges(); }
     }
 
-    // --- Session ---
+    // --- Session JSON ---
     function exportSession() {
         const sessionData = { components, featuresByComp, interfaces, dimsByFeature, availablePresets, mechPresets, imgDescPresets, assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessionData));
@@ -470,7 +482,6 @@
                 availablePresets = data.availablePresets || availablePresets; mechPresets = data.mechPresets || []; imgDescPresets = data.imgDescPresets || [];
                 assignmentMode = data.assignmentMode || 'global'; globalDimAssignments = data.globalDimAssignments || {}; specificDimAssignments = data.specificDimAssignments || {};
                 workingTableData = data.workingTableData || [];
-                
                 document.querySelector(`input[name="assignMode"][value="${assignmentMode}"]`).checked = true;
                 harvestDimensions(); renderComponents(); renderSettingsTab(); renderMechPresets(); renderImgDescPresets();
                 alert("Session loaded successfully!"); document.getElementById('importFile').value = ''; 
@@ -478,31 +489,139 @@
         }; reader.readAsText(file);
     }
 
-    // --- Steps 1-4 ---
+    // --- TAB 1: Components (With Rename/Remove Logic) ---
     function addComponent() {
-        document.getElementById('compInput').value.split(',').map(v => v.trim()).filter(v => v).forEach(val => {
+        document.getElementById('compInput').value.split(',').map(v => cleanName(v)).filter(v => v).forEach(val => {
             if (!components.includes(val)) { components.push(val); if (!featuresByComp[val]) featuresByComp[val] = []; }
         });
         document.getElementById('compInput').value = ''; renderComponents();
     }
-    function removeComponent(c) { components = components.filter(x => x !== c); delete featuresByComp[c]; renderComponents(); }
-    function renderComponents() {
-        const list = document.getElementById('compList'); list.innerHTML = '';
-        components.forEach(c => { list.innerHTML += `<li><span>${c}</span> <button class="btn-danger" onclick="removeComponent('${c}')">Remove</button></li>`; });
+    
+    function removeComponent(c) { 
+        let popCount = getAffectedPopulatedRows(r => r.interface && (r.interface.includes(`${c} (`) || r.interface.includes(`- ${c} (`)));
+        if(popCount > 0 && !confirm(`Warning: Deleting '${c}' will permanently delete ${popCount} filled row(s) from your working session. Proceed?`)) return;
+        
+        components = components.filter(x => x !== c); delete featuresByComp[c];
+        workingTableData = workingTableData.filter(r => !(r.interface && (r.interface.includes(`${c} (`) || r.interface.includes(`- ${c} (`))));
+        renderComponents();
     }
     
+    function renameComponent(oldC) {
+        let newC = prompt(`Rename Component '${oldC}' to:`, oldC);
+        if(!newC || cleanName(newC) === '' || newC === oldC) return;
+        newC = cleanName(newC); if(components.includes(newC)) return alert("Component name already exists.");
+        
+        components[components.indexOf(oldC)] = newC;
+        featuresByComp[newC] = featuresByComp[oldC]; delete featuresByComp[oldC];
+        
+        let newInterfaces = {};
+        Object.keys(interfaces).forEach(k => {
+            let p = k.split('::'); let p1 = p[0].split('|'); let p2 = p[1].split('|');
+            if(p1[0] === oldC) p1[0] = newC; if(p2[0] === oldC) p2[0] = newC;
+            newInterfaces[[p1.join('|'), p2.join('|')].sort().join('::')] = interfaces[k];
+        }); interfaces = newInterfaces;
+        
+        let newDims = {};
+        Object.keys(dimsByFeature).forEach(k => { let [c, f] = k.split('|'); if(c === oldC) c = newC; newDims[`${c}|${f}`] = dimsByFeature[k]; }); dimsByFeature = newDims;
+        
+        let newSpecDims = {};
+        Object.keys(specificDimAssignments).forEach(k => { let [c, f, d] = k.split('|'); if(c === oldC) c = newC; newSpecDims[`${c}|${f}|${d}`] = specificDimAssignments[k]; }); specificDimAssignments = newSpecDims;
+        
+        workingTableData.forEach(r => {
+            if(r.interface) {
+                let rx1 = new RegExp('^' + escapeRegExp(oldC) + ' \\('); let rx2 = new RegExp('- ' + escapeRegExp(oldC) + ' \\(');
+                r.interface = r.interface.replace(rx1, newC + ' (').replace(rx2, '- ' + newC + ' (');
+            }
+            if(r.cause) r.cause = r.cause.replace(new RegExp('^' + escapeRegExp(oldC) + ' '), newC + ' ');
+        });
+        renderComponents();
+    }
+
+    function renderComponents() {
+        let html = '';
+        components.forEach(c => { 
+            html += `<li><span>${c}</span> <div class="action-buttons"><button class="btn-warning" onclick="renameComponent('${c}')">✏️</button><button class="btn-danger" onclick="removeComponent('${c}')">🗑️</button></div></li>`; 
+        });
+        document.getElementById('compList').innerHTML = html;
+        document.getElementById('btnContinueFromFeatures').style.display = components.length ? 'block' : 'none';
+    }
+
+    // --- TAB 2: Features (With Rename/Remove Logic) ---
+    function addFeature(comp, inputId) {
+        document.getElementById(inputId).value.split(',').map(v => cleanName(v)).filter(v => v).forEach(val => {
+            if (!featuresByComp[comp].includes(val)) featuresByComp[comp].push(val);
+        });
+        document.getElementById(inputId).value = ''; renderFeaturesTab();
+    }
+
+    function removeFeature(comp, feat) {
+        let popCount = getAffectedPopulatedRows(r => r.interface && (r.interface.includes(`${comp} (${feat})`) || r.interface.includes(`- ${comp} (${feat})`)));
+        if(popCount > 0 && !confirm(`Warning: Deleting '${feat}' will permanently delete ${popCount} filled row(s). Proceed?`)) return;
+        
+        featuresByComp[comp] = featuresByComp[comp].filter(x => x !== feat);
+        workingTableData = workingTableData.filter(r => !(r.interface && (r.interface.includes(`${comp} (${feat})`) || r.interface.includes(`- ${comp} (${feat})`))));
+        renderFeaturesTab();
+    }
+
+    function renameFeature(comp, oldF) {
+        let newF = prompt(`Rename Feature '${oldF}' (in ${comp}) to:`, oldF);
+        if(!newF || cleanName(newF) === '' || newF === oldF) return;
+        newF = cleanName(newF); if(featuresByComp[comp].includes(newF)) return alert("Feature name already exists.");
+        
+        featuresByComp[comp][featuresByComp[comp].indexOf(oldF)] = newF;
+        
+        let newInterfaces = {};
+        Object.keys(interfaces).forEach(k => {
+            let p = k.split('::'); let p1 = p[0].split('|'); let p2 = p[1].split('|');
+            if(p1[0] === comp && p1[1] === oldF) p1[1] = newF; if(p2[0] === comp && p2[1] === oldF) p2[1] = newF;
+            newInterfaces[[p1.join('|'), p2.join('|')].sort().join('::')] = interfaces[k];
+        }); interfaces = newInterfaces;
+        
+        let newDims = {};
+        Object.keys(dimsByFeature).forEach(k => { let [c, f] = k.split('|'); if(c === comp && f === oldF) f = newF; newDims[`${c}|${f}`] = dimsByFeature[k]; }); dimsByFeature = newDims;
+        
+        let newSpecDims = {};
+        Object.keys(specificDimAssignments).forEach(k => { let [c, f, d] = k.split('|'); if(c === comp && f === oldF) f = newF; newSpecDims[`${c}|${f}|${d}`] = specificDimAssignments[k]; }); specificDimAssignments = newSpecDims;
+        
+        workingTableData.forEach(r => {
+            if(r.interface) {
+                let rx1 = new RegExp('^' + escapeRegExp(comp) + ' \\(' + escapeRegExp(oldF) + '\\)');
+                let rx2 = new RegExp('- ' + escapeRegExp(comp) + ' \\(' + escapeRegExp(oldF) + '\\)');
+                r.interface = r.interface.replace(rx1, comp + ' (' + newF + ')').replace(rx2, '- ' + comp + ' (' + newF + ')');
+            }
+            if(r.cause) {
+                let rxCause = new RegExp('^' + escapeRegExp(comp) + ' ' + escapeRegExp(oldF) + ' ');
+                r.cause = r.cause.replace(rxCause, comp + ' ' + newF + ' ');
+            }
+        });
+        renderFeaturesTab();
+    }
+
     function renderFeaturesTab() {
         let html = '';
-        components.forEach((c, i) => { html += `<div class="input-stacked"><label>${c}</label><input type="text" id="feat_${i}" value="${(featuresByComp[c]||[]).join(', ')}"></div>`; });
-        document.getElementById('featuresContainer').innerHTML = html || '<em>Add components first</em>'; document.getElementById('btnSaveFeatures').style.display = components.length ? 'block' : 'none';
+        components.forEach(c => { 
+            html += `<div class="comp-group"><div class="comp-title">${c}</div>
+                <div class="input-group">
+                    <input type="text" id="featInp_${c.replace(/\s/g,'_')}" placeholder="Add Feature(s)..." onkeypress="handleEnter(event, () => addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}'))">
+                    <button onclick="addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}')">Add</button>
+                </div><ul style="margin-top:0;">`;
+            (featuresByComp[c]||[]).forEach(f => {
+                html += `<li><span>${f}</span><div class="action-buttons"><button class="btn-warning" onclick="renameFeature('${c}', '${f}')">✏️</button><button class="btn-danger" onclick="removeFeature('${c}', '${f}')">🗑️</button></div></li>`;
+            });
+            html += `</ul></div>`;
+        });
+        document.getElementById('featuresContainer').innerHTML = html || '<em>Add components first in Tab 1.</em>';
+        document.getElementById('btnContinueFromFeatures').style.display = components.length ? 'block' : 'none';
     }
-    function saveAllFeatures() { components.forEach((c, i) => { featuresByComp[c] = document.getElementById(`feat_${i}`).value.split(',').map(f => f.trim()).filter(f => f); }); switchTab(3); }
 
+    // --- TAB 3: Matrix (With Pruning Logic) ---
     function buildFeatureMatrix() {
         let allFeats = []; components.forEach(c => { (featuresByComp[c]||[]).forEach(f => allFeats.push({c, f})); });
-        if(allFeats.length < 2) return;
+        if(allFeats.length < 2) return document.getElementById('matrixContainer').innerHTML = '<em>Add at least two features across your components.</em>';
+        
         let html = '<table><thead><tr><th></th>';
         allFeats.forEach(o => { html += `<th>${o.c}<br><small style="color:var(--text-muted);">${o.f}</small></th>`; }); html += '</tr></thead><tbody>';
+        
         for (let i=0; i<allFeats.length; i++) {
             html += `<tr><td>${allFeats[i].c}<br><small style="font-weight:normal; color:var(--text-muted);">${allFeats[i].f}</small></td>`;
             for (let j=0; j<allFeats.length; j++) {
@@ -510,30 +629,96 @@
                 else {
                     let key = [`${allFeats[i].c}|${allFeats[i].f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
                     if (interfaces[key] === undefined) interfaces[key] = true;
-                    html += `<td><input type="checkbox" id="chk_${i}_${j}" ${interfaces[key]?'checked':''} onchange="syncFeat(${i},${j},'${key}')"></td>`;
+                    html += `<td><input type="checkbox" id="chk_${i}_${j}" ${interfaces[key]?'checked':''} onchange="syncFeat(${i},${j},'${key}', '${allFeats[i].c} (${allFeats[i].f}) - ${allFeats[j].c} (${allFeats[j].f})', '${allFeats[j].c} (${allFeats[j].f}) - ${allFeats[i].c} (${allFeats[i].f})')"></td>`;
                 }
             } html += '</tr>';
         }
-        document.getElementById('matrixContainer').innerHTML = html + '</tbody></table>'; document.getElementById('btnContinueFromMatrix').style.display = 'block';
+        document.getElementById('matrixContainer').innerHTML = html + '</tbody></table>'; 
+        document.getElementById('btnContinueFromMatrix').style.display = 'block';
     }
-    function syncFeat(i, j, k) { let v = document.getElementById(`chk_${i}_${j}`).checked; document.getElementById(`chk_${j}_${i}`).checked = v; interfaces[k] = v; }
+
+    function syncFeat(i, j, key, iface1, iface2) { 
+        let isChecked = document.getElementById(`chk_${i}_${j}`).checked; 
+        
+        if (!isChecked) {
+            let popCount = getAffectedPopulatedRows(r => r.interface === iface1 || r.interface === iface2);
+            if (popCount > 0 && !confirm(`Warning: Unchecking this specific interface will permanently delete ${popCount} filled row(s). Proceed?`)) {
+                document.getElementById(`chk_${i}_${j}`).checked = true; return; // Abort
+            }
+            workingTableData = workingTableData.filter(r => r.interface !== iface1 && r.interface !== iface2);
+        }
+        
+        document.getElementById(`chk_${j}_${i}`).checked = isChecked; 
+        interfaces[key] = isChecked; 
+    }
+
+    // --- TAB 4: Dimensions (With Rename/Remove Logic) ---
+    function addDimension(comp, feat, inputId) {
+        let key = `${comp}|${feat}`; if(!dimsByFeature[key]) dimsByFeature[key] = [];
+        document.getElementById(inputId).value.split(',').map(v => cleanName(v).toLowerCase()).filter(v => v).forEach(val => {
+            if (!dimsByFeature[key].includes(val)) dimsByFeature[key].push(val);
+        });
+        document.getElementById(inputId).value = ''; renderDimensionsTab();
+    }
+
+    function removeDimension(comp, feat, dim) {
+        let rxCause = new RegExp('^' + escapeRegExp(comp) + ' ' + escapeRegExp(feat) + ' ' + escapeRegExp(dim) + ' ');
+        let popCount = getAffectedPopulatedRows(r => r.cause && rxCause.test(r.cause));
+        if(popCount > 0 && !confirm(`Warning: Deleting dimension '${dim}' will permanently delete ${popCount} filled row(s). Proceed?`)) return;
+        
+        let key = `${comp}|${feat}`; dimsByFeature[key] = dimsByFeature[key].filter(x => x !== dim);
+        workingTableData = workingTableData.filter(r => !(r.cause && rxCause.test(r.cause)));
+        renderDimensionsTab();
+    }
+
+    function renameDimension(comp, feat, oldD) {
+        let newD = prompt(`Rename Dimension '${oldD}' to:`, oldD);
+        if(!newD || cleanName(newD) === '' || newD === oldD) return;
+        newD = cleanName(newD).toLowerCase(); 
+        let key = `${comp}|${feat}`; if(dimsByFeature[key].includes(newD)) return alert("Dimension name already exists.");
+        
+        dimsByFeature[key][dimsByFeature[key].indexOf(oldD)] = newD;
+        
+        let newSpecDims = {};
+        Object.keys(specificDimAssignments).forEach(k => { let [c, f, d] = k.split('|'); if(c === comp && f === feat && d === oldD) d = newD; newSpecDims[`${c}|${f}|${d}`] = specificDimAssignments[k]; });
+        specificDimAssignments = newSpecDims;
+        
+        if(globalDimAssignments[oldD] && !globalDimAssignments[newD]) globalDimAssignments[newD] = globalDimAssignments[oldD];
+        
+        workingTableData.forEach(r => {
+            if(r.cause) {
+                let rxCause = new RegExp('^' + escapeRegExp(comp) + ' ' + escapeRegExp(feat) + ' ' + escapeRegExp(oldD) + ' ');
+                r.cause = r.cause.replace(rxCause, comp + ' ' + feat + ' ' + newD + ' ');
+            }
+        });
+        renderDimensionsTab();
+    }
 
     function renderDimensionsTab() {
         let html = '';
         components.forEach(c => {
             if (featuresByComp[c] && featuresByComp[c].length) {
-                html += `<h3>${c}</h3>`;
+                html += `<div class="comp-group"><div class="comp-title">${c}</div>`;
                 featuresByComp[c].forEach(f => {
-                    let key = `${c}|${f}`; let dims = (dimsByFeature[key]||[]).join(', ');
-                    html += `<div class="input-stacked"><label>${f}</label><input class="dim-input" data-key="${key}" value="${dims}"></div>`;
+                    let key = `${c}|${f}`; let inId = `dimInp_${c.replace(/\s/g,'_')}_${f.replace(/\s/g,'_')}`;
+                    html += `<div class="feat-group"><div class="feat-title">${f}</div>
+                        <div class="input-group">
+                            <input type="text" id="${inId}" placeholder="Add Dimension(s)..." onkeypress="handleEnter(event, () => addDimension('${c}', '${f}', '${inId}'))">
+                            <button onclick="addDimension('${c}', '${f}', '${inId}')">Add</button>
+                        </div><ul style="margin-top:0;">`;
+                    (dimsByFeature[key]||[]).forEach(d => {
+                        html += `<li><span>${d}</span><div class="action-buttons"><button class="btn-warning" onclick="renameDimension('${c}', '${f}', '${d}')">✏️</button><button class="btn-danger" onclick="removeDimension('${c}', '${f}', '${d}')">🗑️</button></div></li>`;
+                    });
+                    html += `</ul></div>`;
                 });
+                html += `</div>`;
             }
         });
-        document.getElementById('dimensionsContainer').innerHTML = html; document.getElementById('btnSaveDimensions').style.display = html ? 'block' : 'none';
+        document.getElementById('dimensionsContainer').innerHTML = html || '<em>Add features first in Tab 2.</em>'; 
+        document.getElementById('btnSaveDimensions').style.display = html ? 'block' : 'none';
     }
-    function saveAllDimensions() { document.querySelectorAll('.dim-input').forEach(inp => { dimsByFeature[inp.getAttribute('data-key')] = inp.value.split(',').map(d => d.trim().toLowerCase()).filter(d => d); }); harvestDimensions(); switchTab(5); }
 
-    // --- Settings ---
+    // --- TAB 5: Settings ---
     function harvestDimensions() {
         let cg = new Set(), cs = new Set();
         Object.keys(dimsByFeature).forEach(k => { (dimsByFeature[k]||[]).forEach(d => { cg.add(d); cs.add(`${k}|${d}`); }); });
@@ -571,7 +756,7 @@
     function remImgDescPreset(i) { imgDescPresets.splice(i, 1); renderImgDescPresets(); }
     function renderImgDescPresets() { document.getElementById('imgDescList').innerHTML = imgDescPresets.map((m,i) => `<li>${m} <button class="btn-danger" onclick="remImgDescPreset(${i})">X</button></li>`).join(''); }
 
-    // --- Generate ---
+    // --- TAB 6: Generate & Smart Merge ---
     function getExtremes(c, f, d) { let val = assignmentMode === 'global' ? globalDimAssignments[d] : specificDimAssignments[`${c}|${f}|${d}`]; return val ? val.split('|') : ['too high', 'too low']; }
     function generateData() {
         finalTableData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN", "Images"]];
@@ -597,7 +782,7 @@
             workingTableData.forEach((r) => {
                 let mechStr = r.mechPreset ? (r.mechDetails ? `${r.mechPreset} - ${r.mechDetails}` : r.mechPreset) : (r.mechDetails || "");
                 let imgCount = r.images ? r.images.length : 0;
-                tb.innerHTML += `<tr><td><strong>${r.interface}</strong></td><td>${r.mode}</td><td>${r.effect}</td><td>${r.cause}</td><td>${mechStr}</td><td>${r.sev}</td><td>${r.occ}</td><td>${r.det}</td><td><span style="color:${r.rpn >= 100 ? '#ef4444' : r.rpn >= 50 ? '#f59e0b' : 'inherit'}; font-weight:bold;">${r.rpn}</span></td><td>${imgCount > 0 ? imgCount + ' img' : ''}</td></tr>`;
+                tb.innerHTML += `<tr><td><strong>${r.interface}</strong></td><td>${r.mode||""}</td><td>${r.effect||""}</td><td>${r.cause}</td><td>${mechStr}</td><td>${r.sev||""}</td><td>${r.occ||""}</td><td>${r.det||""}</td><td><span style="color:${r.rpn >= 100 ? '#ef4444' : r.rpn >= 50 ? '#f59e0b' : 'inherit'}; font-weight:bold;">${r.rpn||""}</span></td><td>${imgCount > 0 ? imgCount + ' img' : ''}</td></tr>`;
             });
         } else {
             document.getElementById('btnClearData').style.display = 'none'; generateData();
@@ -605,24 +790,39 @@
             else { for(let i=1; i<finalTableData.length; i++) { let r=finalTableData[i]; tb.innerHTML += `<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td></td></tr>`; } }
         }
     }
-    function clearPopulatedData() { if(confirm("Clear populated data?")) { workingTableData = []; generatePreview(); } }
+    
+    function clearPopulatedData() { if(confirm("Clear ALL populated data? This cannot be undone.")) { workingTableData = []; generatePreview(); } }
 
-    // --- Populate & Hierarchy Indexing ---
     function startPopulating() {
-        if (!workingTableData || workingTableData.length === 0) {
-            generateData(); if(finalTableData.length<=1) return alert("Nothing to populate.");
-            workingTableData = finalTableData.slice(1).map(r => ({ interface: r[0], mode: r[1], effect: r[2], cause: r[3], mechPreset: '', mechDetails: '', sev: r[5], occ: r[6], det: r[7], rpn: r[8], images: [] }));
+        generateData(); 
+        if(finalTableData.length <= 1) return alert("Nothing to populate. Please define parts and dimensions.");
+        
+        let newWorkingData = finalTableData.slice(1).map(r => ({ 
+            interface: r[0], mode: r[1], effect: r[2], cause: r[3], 
+            mechPreset: '', mechDetails: '', sev: r[5], occ: r[6], det: r[7], rpn: r[8], images: [] 
+        }));
+
+        if (workingTableData && workingTableData.length > 0) {
+            let mergedData = []; let addedCount = 0;
+            newWorkingData.forEach(newRow => {
+                let existingRows = workingTableData.filter(oldRow => oldRow.interface === newRow.interface && oldRow.cause === newRow.cause);
+                if (existingRows.length > 0) { existingRows.forEach(er => mergedData.push({...er})); } 
+                else { mergedData.push({...newRow}); addedCount++; }
+            });
+            workingTableData = mergedData;
+            if (addedCount > 0) alert(`Smart Merge applied! Preserved existing work and safely appended ${addedCount} new row(s).`);
+        } else {
+            workingTableData = newWorkingData;
         }
+
         populateIndex = 0; document.getElementById('previewSection').style.display='none'; document.getElementById('populateSection').style.display='block';
         switchSubTab('form'); renderPopulateStep();
     }
+    
     function exitPopulating() { saveCurrentRowData(); document.getElementById('previewSection').style.display='block'; document.getElementById('populateSection').style.display='none'; generatePreview(); }
 
     function renderGroupedRowRanges() {
-        let tree = {};
-        let currentInterface = null; let startIdx = 0;
-        let groups = [];
-        
+        let tree = {}; let currentInterface = null; let startIdx = 0; let groups = [];
         workingTableData.forEach((r, i) => {
             if (r.interface !== currentInterface) {
                 if (currentInterface !== null) groups.push({ interface: currentInterface, start: startIdx, end: i - 1 });
@@ -635,12 +835,10 @@
             let match = g.interface.match(/(.+) \((.+)\) - (.+ \(.+\))/);
             if (match) {
                 let c1 = match[1]; let f1 = match[2]; let target = match[3];
-                if (!tree[c1]) tree[c1] = {};
-                if (!tree[c1][f1]) tree[c1][f1] = [];
+                if (!tree[c1]) tree[c1] = {}; if (!tree[c1][f1]) tree[c1][f1] = [];
                 tree[c1][f1].push({ target: target, start: g.start, end: g.end });
             } else {
-                if (!tree["Other"]) tree["Other"] = {};
-                if (!tree["Other"]["-"]) tree["Other"]["-"] = [];
+                if (!tree["Other"]) tree["Other"] = {}; if (!tree["Other"]["-"]) tree["Other"]["-"] = [];
                 tree["Other"]["-"].push({ target: g.interface, start: g.start, end: g.end });
             }
         });
@@ -651,12 +849,7 @@
             for (let feat in tree[comp]) {
                 html += `<div class="feat-group"><div class="feat-title">${feat}</div><div class="range-grid">`;
                 tree[comp][feat].forEach(item => {
-                    html += `
-                        <button class="range-btn" onclick="jumpToRow(${item.start}); switchSubTab('form')">
-                            <span class="range-target">vs. ${item.target}</span>
-                            <span class="range-badge">Rows ${item.start+1}-${item.end+1}</span>
-                        </button>
-                    `;
+                    html += `<button class="range-btn" onclick="jumpToRow(${item.start}); switchSubTab('form')"><span class="range-target">vs. ${item.target}</span><span class="range-badge">Rows ${item.start+1}-${item.end+1}</span></button>`;
                 });
                 html += `</div></div>`;
             }
@@ -747,8 +940,7 @@
     // --- Export ZIP ---
     async function exportZip() {
         if (!workingTableData || workingTableData.length === 0) return alert("Please fill out data in the browser first.");
-        saveCurrentRowData();
-        showLoading("Compiling your ZIP package... (Depending on image count, this may take a moment)", 0);
+        saveCurrentRowData(); showLoading("Compiling your ZIP package...", 0);
         
         setTimeout(async () => {
             let zip = new JSZip(); let imgFolder = zip.folder("images");
@@ -772,28 +964,21 @@
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DFMEA");
             const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }); zip.file("DFMEA_Table.xlsx", excelBuffer);
             
-            zip.generateAsync({type:"blob"}, function updateCallback(metadata) {
-                showLoading(`Zipping files: ${metadata.percent.toFixed(0)}%`, metadata.percent);
-            }).then(function(content) {
+            zip.generateAsync({type:"blob"}, function updateCallback(metadata) { showLoading(`Zipping files: ${metadata.percent.toFixed(0)}%`, metadata.percent); }).then(function(content) {
                 const url = window.URL.createObjectURL(content); const a = document.createElement("a"); a.href = url; a.download = "DFMEA_Export.zip";
-                document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove();
-                hideLoading();
+                document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove(); hideLoading();
             });
         }, 50);
     }
 
-    // --- TAB 7: BEAUTIFUL PDF GENERATION ---
+    // --- TAB 7: PDF GENERATION ---
     async function handleZipUploadForPDF(event) {
         const file = event.target.files[0]; if(!file) return;
-        document.getElementById('pdfStatus').style.display = 'none';
-        document.getElementById('btnDownloadPDF').style.display = 'none';
-        
-        showLoading("Extracting ZIP contents...");
+        document.getElementById('pdfStatus').style.display = 'none'; document.getElementById('btnDownloadPDF').style.display = 'none'; showLoading("Extracting ZIP contents...");
 
         try {
             let zipFiles = await JSZip.loadAsync(file);
-            let excelFile = zipFiles.file("DFMEA_Table.xlsx");
-            if (!excelFile) throw new Error("Could not find DFMEA_Table.xlsx in the ZIP.");
+            let excelFile = zipFiles.file("DFMEA_Table.xlsx"); if (!excelFile) throw new Error("Could not find DFMEA_Table.xlsx in the ZIP.");
             let excelData = await excelFile.async("arraybuffer");
             let wb = XLSX.read(new Uint8Array(excelData), {type: 'array'});
             let jsonRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
@@ -808,51 +993,34 @@
             for (let filename in zipFiles.files) {
                 if (filename.startsWith("images/") && !zipFiles.files[filename].dir) {
                     let base64 = await zipFiles.files[filename].async("base64");
-                    let ext = filename.split('.').pop().toLowerCase();
-                    let mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+                    let ext = filename.split('.').pop().toLowerCase(); let mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
                     imageMap[filename.replace('images/', '')] = `data:${mime};base64,${base64}`;
                 }
             }
-
             pdfGenerationData = { rows: parsedRows, imageMap: imageMap };
-            
-            document.getElementById('pdfRowCount').innerText = parsedRows.length;
-            document.getElementById('pdfImgCount').innerText = Object.keys(imageMap).length;
-            document.getElementById('pdfStatus').style.display = 'block';
-            document.getElementById('btnDownloadPDF').style.display = 'block';
-
-        } catch (err) { alert("Failed to parse ZIP. " + err.message); }
-        finally { hideLoading(); }
+            document.getElementById('pdfRowCount').innerText = parsedRows.length; document.getElementById('pdfImgCount').innerText = Object.keys(imageMap).length;
+            document.getElementById('pdfStatus').style.display = 'block'; document.getElementById('btnDownloadPDF').style.display = 'block';
+        } catch (err) { alert("Failed to parse ZIP. " + err.message); } finally { hideLoading(); }
         document.getElementById('pdfZipInput').value = '';
     }
 
     function generatePDFReport() {
-        if (!pdfGenerationData || pdfGenerationData.rows.length === 0) return;
-        
-        showLoading("Generating high-resolution PDF... This may take several seconds.");
-
+        if (!pdfGenerationData || pdfGenerationData.rows.length === 0) return; showLoading("Generating high-resolution PDF... This may take several seconds.");
         setTimeout(() => {
-            let rows = pdfGenerationData.rows;
-            let images = pdfGenerationData.imageMap;
-            let content = [];
+            let rows = pdfGenerationData.rows; let images = pdfGenerationData.imageMap; let content = [];
             
-            // 1. Cover Page
             content.push({ text: 'Design Failure Mode and Effects Analysis', style: 'coverSubtitle', margin: [0, 150, 0, 10], alignment: 'center' });
             content.push({ text: 'DFMEA REPORT', style: 'coverTitle', margin: [0, 0, 0, 20], alignment: 'center' });
             content.push({ canvas: [{ type: 'line', x1: 150, y1: 0, x2: 365, y2: 0, lineWidth: 2, lineColor: '#2563eb' }], margin: [0, 0, 0, 40] });
             content.push({ text: `Generated on ${new Date().toLocaleDateString()}`, style: 'coverDate', alignment: 'center', margin: [0, 0, 0, 100] });
             content.push({ text: '', pageBreak: 'after' });
 
-            // 2. Table of Contents
             content.push({ text: 'Table of Contents', style: 'header', margin: [0, 0, 0, 20] });
-            
             let tree = {};
             rows.forEach((r, i) => {
                 let match = r.interface.match(/(.+) \((.+)\) - (.+ \(.+\))/);
-                let comp = match ? match[1] : "Other";
-                let feat = match ? match[2] : "-";
-                if (!tree[comp]) tree[comp] = {};
-                if (!tree[comp][feat]) tree[comp][feat] = [];
+                let comp = match ? match[1] : "Other"; let feat = match ? match[2] : "-";
+                if (!tree[comp]) tree[comp] = {}; if (!tree[comp][feat]) tree[comp][feat] = [];
                 tree[comp][feat].push({ index: i, interface: r.interface });
             });
 
@@ -861,22 +1029,15 @@
                 for (let feat in tree[comp]) {
                     content.push({ text: `• ${feat}`, style: 'tocFeat', margin: [15, 5, 0, 5] });
                     tree[comp][feat].forEach(item => {
-                        content.push({ 
-                            text: `Row ${item.index + 1}: vs. ${item.interface.split(' - ')[1]}`, 
-                            linkToDestination: `row_${item.index}`,
-                            style: 'tocItem',
-                            margin: [35, 3, 0, 3] 
-                        });
+                        content.push({ text: `Row ${item.index + 1}: vs. ${item.interface.split(' - ')[1]}`, linkToDestination: `row_${item.index}`, style: 'tocItem', margin: [35, 3, 0, 3] });
                     });
                     content.push({ text: '', margin: [0, 0, 0, 8] });
                 }
             }
             content.push({ text: '', pageBreak: 'after' });
 
-            // 3. Row Pages
             rows.forEach((r, i) => {
                 content.push({ text: `Row ${i + 1} Detail`, id: `row_${i}`, style: 'header', margin: [0, 0, 0, 15] });
-                
                 content.push({
                     table: {
                         widths: ['30%', '70%'],
@@ -895,28 +1056,18 @@
                     layout: {
                         hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 2 : 1; },
                         vLineWidth: function (i, node) { return (i === 0 || i === node.table.widths.length) ? 2 : 1; },
-                        hLineColor: function (i, node) { return '#cbd5e1'; },
-                        vLineColor: function (i, node) { return '#cbd5e1'; },
-                        paddingLeft: function(i, node) { return 10; },
-                        paddingRight: function(i, node) { return 10; },
-                        paddingTop: function(i, node) { return 8; },
-                        paddingBottom: function(i, node) { return 8; },
-                    },
-                    margin: [0, 0, 0, 20]
+                        hLineColor: function () { return '#cbd5e1'; }, vLineColor: function () { return '#cbd5e1'; },
+                        paddingLeft: function() { return 10; }, paddingRight: function() { return 10; }, paddingTop: function() { return 8; }, paddingBottom: function() { return 8; },
+                    }, margin: [0, 0, 0, 20]
                 });
 
                 if (r.imgFiles && r.imgFiles.length > 0) {
                     r.imgFiles.forEach((filename) => {
                         if (images[filename]) {
                             content.push({ text: '', pageBreak: 'before' });
-                            content.push({
-                                table: { widths: ['*'], body: [ [ {text: `Attachment: Row ${i + 1}`, style: 'attachHeader'} ] ] }, 
-                                layout: 'noBorders', margin: [0, 0, 0, 20]
-                            });
-                            
+                            content.push({ table: { widths: ['*'], body: [ [ {text: `Attachment: Row ${i + 1}`, style: 'attachHeader'} ] ] }, layout: 'noBorders', margin: [0, 0, 0, 20] });
                             let desc = r.imgDescs.find(d => d.startsWith(`[${filename}]`));
                             if (desc) desc = desc.replace(`[${filename}] `, ''); else desc = "No description provided.";
-                            
                             content.push({ image: images[filename], width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
                             content.push({ text: desc, alignment: 'center', italics: true, color: '#475569', fontSize: 10 });
                         }
@@ -926,17 +1077,9 @@
             });
 
             let docDefinition = {
-                pageSize: 'A4',
-                pageMargins: [40, 60, 40, 60],
-                info: { title: 'DFMEA Report' },
-                header: function(currentPage, pageCount) {
-                    if(currentPage === 1) return null;
-                    return { text: 'DFMEA Report', margin: [40, 20, 40, 0], color: '#94a3b8', fontSize: 9, bold: true };
-                },
-                footer: function(currentPage, pageCount) {
-                    if(currentPage === 1) return null;
-                    return { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', margin: [0, 20, 40, 0], color: '#64748b', fontSize: 9 };
-                },
+                pageSize: 'A4', pageMargins: [40, 60, 40, 60], info: { title: 'DFMEA Report' },
+                header: function(currentPage) { if(currentPage === 1) return null; return { text: 'DFMEA Report', margin: [40, 20, 40, 0], color: '#94a3b8', fontSize: 9, bold: true }; },
+                footer: function(currentPage, pageCount) { if(currentPage === 1) return null; return { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', margin: [0, 20, 40, 0], color: '#64748b', fontSize: 9 }; },
                 content: content,
                 styles: {
                     coverTitle: { fontSize: 32, bold: true, color: '#1e3a8a', characterSpacing: 2 },
@@ -951,12 +1094,10 @@
                     tocFeat: { fontSize: 12, bold: true, color: '#475569' },
                     tocItem: { fontSize: 11, color: '#2563eb', decoration: 'underline' },
                     attachHeader: { fontSize: 14, bold: true, color: '#334155', fillColor: '#f1f5f9', margin: [10, 5, 10, 5] }
-                },
-                defaultStyle: { font: 'Roboto', fontSize: 11, lineHeight: 1.3 }
+                }, defaultStyle: { font: 'Roboto', fontSize: 11, lineHeight: 1.3 }
             };
 
             pdfMake.createPdf(docDefinition).download('DFMEA_Report.pdf', () => { hideLoading(); });
-            
         }, 100);
     }
 </script>
