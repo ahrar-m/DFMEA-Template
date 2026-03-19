@@ -58,6 +58,7 @@
         };
     </script>
 
+
     <style>
         /* DARK MODE DEFAULT VARIABLES */
         :root { 
@@ -228,7 +229,7 @@
         <h2>Feature Details</h2>
         <span class="hint">Add measurable dimensions and attach reference images for specific features.</span>
         <div id="dimensionsContainer"></div>
-        <button class="btn-success btn-save-large" onclick="saveAllDimensions()" id="btnSaveDimensions" style="display:none;">💾 Save Dimensions & Continue ➔</button>
+        <button class="btn-success btn-save-large" onclick="switchTab(5)" id="btnSaveDimensions" style="display:none;">💾 Save Dimensions & Continue ➔</button>
         
         <input type="file" id="featFileInput" accept="image/*" style="display:none" onchange="handleFeatImageUpload(event)">
     </div>
@@ -436,6 +437,12 @@
     window.addEventListener('DOMContentLoaded', () => {
         const savedTheme = localStorage.getItem('dfmea-theme');
         if (savedTheme === 'light') { document.body.classList.add('light-mode'); document.getElementById('themeBtn').innerText = '🌙 Dark Mode'; }
+        
+        // PDF Settings Interaction
+        const radios = document.querySelectorAll('input[name="pdfTocStyle"]');
+        radios.forEach(r => r.addEventListener('change', function() {
+            // Keep UI tidy depending on radio selected
+        }));
     });
 
     // --- UI LOADING ---
@@ -531,14 +538,43 @@
 
     function handleEnter(e, func) { if (e.key === 'Enter') { e.preventDefault(); func(); } }
     
+    // Auto-Sweepers for Tabs
+    function sweepFeatures() {
+        components.forEach(c => {
+            let inId = `featInp_${c.replace(/\s/g,'_')}`; let el = document.getElementById(inId);
+            if (el && el.value.trim() !== '') {
+                el.value.split(',').map(v => cleanName(v)).filter(v => v).forEach(val => {
+                    if (!featuresByComp[c].includes(val)) featuresByComp[c].push(val);
+                });
+                el.value = '';
+            }
+        });
+    }
+    
+    function sweepDimensions() {
+        components.forEach(c => {
+            (featuresByComp[c] || []).forEach(f => {
+                let inId = `dimInp_${c.replace(/\s/g,'_')}_${f.replace(/\s/g,'_')}`; let el = document.getElementById(inId);
+                if (el && el.value.trim() !== '') {
+                    let key = `${c}|${f}`; if(!dimsByFeature[key]) dimsByFeature[key] = [];
+                    el.value.split(',').map(v => cleanName(v).toLowerCase()).filter(v => v).forEach(val => {
+                        if (!dimsByFeature[key].includes(val)) dimsByFeature[key].push(val);
+                    });
+                    el.value = '';
+                }
+            });
+        });
+    }
+
     function switchTab(step) {
-        // Validation Checks before proceeding
+        // Trigger sweeps before checking validations
+        if(document.getElementById('tab2').classList.contains('active')) sweepFeatures();
+        if(document.getElementById('tab4').classList.contains('active')) { sweepDimensions(); saveFeatImageDescs(); harvestDimensions(); }
+
+        // Validation Warnings (Non-blocking)
         if (step >= 3 && step <= 6) {
             let emptyComps = components.filter(c => !featuresByComp[c] || featuresByComp[c].length === 0);
-            if (emptyComps.length > 0) {
-                alert(`Cannot proceed. The following components have no features:\n\n- ${emptyComps.join('\n- ')}\n\nPlease add at least one feature to each in Tab 2.`);
-                return;
-            }
+            if (emptyComps.length > 0) alert(`Warning: The following components have no features:\n\n- ${emptyComps.join('\n- ')}\n\nThey will be ignored in the matrix until you add features in Tab 2.`);
         }
         if (step >= 5 && step <= 6) {
             let emptyFeats = [];
@@ -548,10 +584,7 @@
                     if (!dimsByFeature[key] || dimsByFeature[key].length === 0) emptyFeats.push(`${c} ➔ ${f}`);
                 });
             });
-            if (emptyFeats.length > 0) {
-                alert(`Cannot proceed. The following features have no dimensions:\n\n- ${emptyFeats.join('\n- ')}\n\nPlease add at least one dimension to each in Tab 4.`);
-                return;
-            }
+            if (emptyFeats.length > 0) alert(`Warning: The following features have no dimensions:\n\n- ${emptyFeats.join('\n- ')}\n\nThey will only generate 1 row by default.`);
         }
 
         // Standard Switch Logic
@@ -560,7 +593,7 @@
         
         if (step === 2) renderFeaturesTab(); 
         if (step === 3) { buildFeatureMatrix(); harvestDimensions(); updateMatrixTotalRows(); } 
-        if (step === 4) { renderDimensionsTab(); }
+        if (step === 4) renderDimensionsTab(); 
         if (step === 5) { harvestDimensions(); renderSettingsTab(); renderMechPresets(); renderImgDescPresets(); }
         if (step === 6) { document.getElementById('previewSection').style.display = 'block'; document.getElementById('populateSection').style.display = 'none'; generatePreview(); }
     }
@@ -581,6 +614,7 @@
         const a = document.createElement('a'); a.href = url; a.download = "dfmea_session.json"; document.body.appendChild(a); a.click(); a.remove();
         URL.revokeObjectURL(url);
     }
+    
     function importSession(event) {
         const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
         reader.onload = function(e) {
@@ -591,10 +625,15 @@
                 availablePresets = data.availablePresets || availablePresets; mechPresets = data.mechPresets || []; imgDescPresets = data.imgDescPresets || [];
                 assignmentMode = data.assignmentMode || 'global'; globalDimAssignments = data.globalDimAssignments || {}; specificDimAssignments = data.specificDimAssignments || {};
                 workingTableData = data.workingTableData || [];
-                document.querySelector(`input[name="assignMode"][value="${assignmentMode}"]`).checked = true;
-                harvestDimensions(); renderComponents(); renderSettingsTab(); renderMechPresets(); renderImgDescPresets();
+                
+                let modeEl = document.querySelector(`input[name="assignMode"][value="${assignmentMode}"]`);
+                if(modeEl) modeEl.checked = true;
+
+                harvestDimensions(); renderComponents(); renderFeaturesTab(); buildFeatureMatrix(); renderDimensionsTab(); renderSettingsTab(); renderMechPresets(); renderImgDescPresets();
                 alert("Session loaded successfully!"); document.getElementById('importFile').value = ''; 
-            } catch (err) { alert("Error loading session."); }
+            } catch (err) { 
+                alert("Error loading session: " + err.message); console.error("Session Import Error:", err);
+            }
         }; reader.readAsText(file);
     }
 
@@ -698,7 +737,8 @@
         let html = '';
         components.forEach(c => { 
             html += `<div class="comp-group"><div class="comp-title">${c}</div>
-                <div class="input-group"><input type="text" id="featInp_${c.replace(/\s/g,'_')}" placeholder="Add Feature(s)..." style="flex: 1; min-width: 200px;" onkeypress="handleEnter(event, () => addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}'))">
+                <div class="input-group" style="display:flex; width: 100%;">
+                <input type="text" id="featInp_${c.replace(/\s/g,'_')}" placeholder="Add Feature(s)..." style="flex: 1; min-width: 200px;" onkeypress="handleEnter(event, () => addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}'))">
                 <button onclick="addFeature('${c}', 'featInp_${c.replace(/\s/g,'_')}')">Add</button></div><ul style="margin-top:0;">`;
             (featuresByComp[c]||[]).forEach(f => { html += `<li><span>${f}</span><div class="action-buttons"><button class="btn-warning" onclick="renameFeature('${c}', '${f}')">✏️</button><button class="btn-danger" onclick="removeFeature('${c}', '${f}')">🗑️</button></div></li>`; });
             html += `</ul></div>`;
@@ -710,21 +750,19 @@
     // --- TAB 3: Matrix ---
     function updateMatrixTotalRows() {
         let total = 0;
-        components.forEach(c1 => {
-            components.forEach(c2 => {
-                if (c1 === c2) return;
-                (featuresByComp[c1] || []).forEach(f1 => {
-                    (featuresByComp[c2] || []).forEach(f2 => {
-                        let p = [`${c1}|${f1}`, `${c2}|${f2}`].sort().join('::');
-                        if (interfaces[p]) {
-                            let causes = 0;
-                            (dimsByFeature[`${c1}|${f1}`] || []).forEach(d => { causes += getExtremes(c1, f1, d).length; });
-                            total += causes === 0 ? 1 : causes;
-                        }
-                    });
-                });
-            });
-        });
+        let allFeats = []; components.forEach(c => { (featuresByComp[c]||[]).forEach(f => allFeats.push({c, f})); });
+        for (let i=0; i<allFeats.length; i++) {
+            for (let j=0; j<allFeats.length; j++) {
+                if (allFeats[i].c !== allFeats[j].c) {
+                    let key = [`${allFeats[i].c}|${allFeats[i].f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
+                    if (interfaces[key]) {
+                        let causes = 0;
+                        (dimsByFeature[`${allFeats[i].c}|${allFeats[i].f}`] || []).forEach(d => { causes += getExtremes(allFeats[i].c, allFeats[i].f, d).length; });
+                        total += causes === 0 ? 1 : causes;
+                    }
+                }
+            }
+        }
         document.getElementById('matrixTotalCount').innerText = total;
     }
 
@@ -773,9 +811,7 @@
             if (!dimsByFeature[key].includes(val)) dimsByFeature[key].push(val);
         });
         document.getElementById(inputId).value = ''; 
-        renderDimensionsTab(); 
-        harvestDimensions();
-        updateMatrixTotalRows();
+        renderDimensionsTab(); harvestDimensions(); updateMatrixTotalRows();
     }
 
     function removeDimension(comp, feat, dim) {
@@ -814,24 +850,16 @@
         currentFeatImageTarget = `${comp}|${feat}`;
         document.getElementById('featFileInput').click();
     }
-    
     function handleFeatImageUpload(e) {
         let file = e.target.files[0]; if(!file || !currentFeatImageTarget) return; 
-        processImageFile(file, (dataUrl) => { 
-            addFeatImage(currentFeatImageTarget, dataUrl); 
-            document.getElementById('featFileInput').value = ''; 
-        });
+        processImageFile(file, (dataUrl) => { addFeatImage(currentFeatImageTarget, dataUrl); document.getElementById('featFileInput').value = ''; });
     }
-    
     function addFeatImage(key, dataUrl) {
         if(!featImages[key]) featImages[key] = [];
-        featImages[key].push({ dataUrl: dataUrl, descPreset: '', descDetails: '' }); 
-        renderDimensionsTab(); 
+        featImages[key].push({ dataUrl: dataUrl, descPreset: '', descDetails: '' }); renderDimensionsTab(); 
     }
-    
     function removeFeatImage(key, idx) {
-        if(featImages[key]) featImages[key].splice(idx, 1);
-        renderDimensionsTab();
+        if(featImages[key]) featImages[key].splice(idx, 1); renderDimensionsTab();
     }
 
     function saveFeatImageDescs() {
@@ -903,28 +931,6 @@
         });
     }
 
-    function saveAllDimensions() {
-        // Automatically add any text typed but not "Added"
-        components.forEach(c => {
-            (featuresByComp[c] || []).forEach(f => {
-                let inId = `dimInp_${c.replace(/\s/g,'_')}_${f.replace(/\s/g,'_')}`;
-                let el = document.getElementById(inId);
-                if (el && el.value.trim() !== '') {
-                    let key = `${c}|${f}`; if(!dimsByFeature[key]) dimsByFeature[key] = [];
-                    el.value.split(',').map(v => cleanName(v).toLowerCase()).filter(v => v).forEach(val => {
-                        if (!dimsByFeature[key].includes(val)) dimsByFeature[key].push(val);
-                    });
-                }
-            });
-        });
-        
-        saveFeatImageDescs(); 
-        harvestDimensions(); 
-        renderDimensionsTab(); // Update UI
-        updateMatrixTotalRows(); // Update Count
-        switchTab(5);
-    }
-
     // Global Paste Listener
     document.addEventListener("paste", function(e) {
         let items = e.clipboardData.items;
@@ -944,6 +950,12 @@
     });
 
     // --- TAB 5: Settings ---
+    function harvestDimensions() {
+        let cg = new Set(), cs = new Set();
+        Object.keys(dimsByFeature).forEach(k => { (dimsByFeature[k]||[]).forEach(d => { cg.add(d); cs.add(`${k}|${d}`); }); });
+        let def = availablePresets.length ? `${availablePresets[0].ext1}|${availablePresets[0].ext2}` : "too high|too low";
+        cg.forEach(d => { if (!globalDimAssignments[d]) globalDimAssignments[d] = def; }); cs.forEach(k => { if (!specificDimAssignments[k]) specificDimAssignments[k] = def; });
+    }
     function toggleAssignMode() {
         let old = assignmentMode; assignmentMode = document.querySelector('input[name="assignMode"]:checked').value;
         if(old === 'global' && assignmentMode === 'specific') { Object.keys(specificDimAssignments).forEach(k => { let d = k.split('|')[2]; if (globalDimAssignments[d]) specificDimAssignments[k] = globalDimAssignments[d]; }); }
@@ -1168,7 +1180,6 @@
         setTimeout(async () => {
             let zip = new JSZip(); let imgFolder = zip.folder("images"); let featImgFolder = zip.folder("images/features");
             
-            // 1. Compile Main Excel Sheet
             let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN", "Attached Images", "Image Descriptions"]];
             workingTableData.forEach((r, idx) => {
                 let mechStr = r.mechPreset ? (r.mechDetails ? `${r.mechPreset} - ${r.mechDetails}` : r.mechPreset) : (r.mechDetails || "");
@@ -1187,7 +1198,6 @@
             const ws = XLSX.utils.aoa_to_sheet(exportData); ws['!cols'] = [{wch:25},{wch:20},{wch:20},{wch:30},{wch:20},{wch:5},{wch:5},{wch:5},{wch:5},{wch:25},{wch:40}];
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DFMEA");
             
-            // 2. Hide Feature Images in zip (for PDF compiler context)
             Object.keys(featImages).forEach(key => {
                 featImages[key].forEach((img, idx) => {
                     let base64Data = img.dataUrl.split(',')[1]; let ext = img.dataUrl.substring("data:image/".length, img.dataUrl.indexOf(";base64"));
@@ -1196,7 +1206,6 @@
                 });
             });
 
-            // 3. Create Session JSON
             const sessionData = { components, featuresByComp, interfaces, dimsByFeature, featImages, availablePresets, mechPresets, imgDescPresets, assignmentMode, globalDimAssignments, specificDimAssignments, workingTableData };
             const jsonStr = JSON.stringify(sessionData);
             zip.file("dfmea_session.json", jsonStr);
