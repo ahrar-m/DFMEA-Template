@@ -158,6 +158,7 @@
         .paste-zone { border: 2px dashed var(--border); background: var(--highlight-bg); padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: background 0.2s; margin-bottom: 15px; }
         .paste-zone:hover, .paste-zone:focus { background: var(--info-bg); border-color: var(--primary); color: var(--info-text); outline: none; }
         
+        /* Updated Image Layouts to expand to Half Screen */
         .img-card { display: flex; gap: 20px; padding: 15px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 15px; background: var(--card-bg); align-items: flex-start; flex-wrap: wrap; }
         .img-thumb { width: 100%; max-width: 48%; height: auto; max-height: 400px; object-fit: contain; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); }
         .img-details { flex-grow: 1; display: flex; flex-direction: column; gap: 10px; min-width: 250px; }
@@ -590,6 +591,15 @@
                 }
             });
         });
+    }
+
+    // --- TAB 5: Settings ---
+    function harvestDimensions() {
+        let cg = new Set(), cs = new Set();
+        Object.keys(dimsByFeature).forEach(k => { (dimsByFeature[k]||[]).forEach(d => { cg.add(d); cs.add(`${k}|${d}`); }); });
+        let def = availablePresets.length ? `${availablePresets[0].ext1}|${availablePresets[0].ext2}` : "too high|too low";
+        cg.forEach(d => { if (!globalDimAssignments[d]) globalDimAssignments[d] = def; }); 
+        cs.forEach(k => { if (!specificDimAssignments[k]) specificDimAssignments[k] = def; });
     }
 
     function switchTab(step) {
@@ -1397,7 +1407,6 @@
                                 content.push({ text: ' ', margin: [0, 0, 0, 15] });
                             }
                             
-                            // 500x550 bounds ensure it fits on the page below the headers without overflowing
                             content.push({ image: img.dataUrl, fit: [500, 550], alignment: 'center', margin: [0, 0, 0, 15] });
                         });
                     }
@@ -1443,7 +1452,7 @@
                 if (r.images && r.images.length > 0) {
                     r.images.forEach((img) => {
                         content.push({ text: '', pageBreak: 'before' });
-                        content.push({ text: `Attachment: Row ${r.oIndex + 1}`, style: 'header', margin: [0, 0, 0, 15] });
+                        content.push({ text: `Attachment: Row ${r.oIndex + 1}`, style: 'header', margin: [0, 0, 0, 10] });
                         
                         let preset = img.descPreset || "Attached Image";
                         let caption = img.descDetails || "";
@@ -1490,5 +1499,3 @@
 </script>
 </body>
 </html>
-    
-    
