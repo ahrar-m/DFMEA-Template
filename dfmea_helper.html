@@ -58,7 +58,8 @@
         };
     </script>
 
-
+ 
+    
     <style>
         /* DARK MODE DEFAULT VARIABLES */
         :root { 
@@ -156,9 +157,10 @@
 
         .paste-zone { border: 2px dashed var(--border); background: var(--highlight-bg); padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: background 0.2s; margin-bottom: 15px; }
         .paste-zone:hover, .paste-zone:focus { background: var(--info-bg); border-color: var(--primary); color: var(--info-text); outline: none; }
-        .img-card { display: flex; gap: 15px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; background: var(--card-bg); align-items: flex-start; }
-        .img-thumb { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); }
-        .img-details { flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
+        
+        .img-card { display: flex; gap: 20px; padding: 15px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 15px; background: var(--card-bg); align-items: flex-start; flex-wrap: wrap; }
+        .img-thumb { width: 100%; max-width: 48%; height: auto; max-height: 400px; object-fit: contain; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); }
+        .img-details { flex-grow: 1; display: flex; flex-direction: column; gap: 10px; min-width: 250px; }
         
         .pdf-drop-zone { border: 3px dashed var(--primary); background: var(--highlight-bg); padding: 40px; text-align: center; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
         .pdf-drop-zone:hover { background: var(--info-bg); }
@@ -296,7 +298,7 @@
             </div>
             
             <div class="info-box" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>Showing top <input type="number" id="previewLimit" value="25" oninput="generatePreview()" style="width: 70px; text-align:center;"> of <strong id="previewTotalCount" style="color:var(--primary);">0</strong> rows</div>
+                <div>Showing top <input type="number" id="previewLimit" value="25" onkeypress="handleEnter(event, generatePreview)" onblur="generatePreview()" style="width: 70px; text-align:center;"> of <strong id="previewTotalCount" style="color:var(--primary);">0</strong> generated rows</div>
             </div>
 
             <div class="table-responsive" style="margin-top: 10px;">
@@ -329,6 +331,9 @@
                         <p style="margin: 0 0 5px 0; font-size: 15px; color: var(--text-heading);"><strong>Interface:</strong> <span id="popInterface"></span></p>
                         <p style="margin: 0; color: #ef4444; font-size: 15px;"><strong>Cause:</strong> <span id="popCause"></span></p>
                     </div>
+                    
+                    <div id="popReferenceImages"></div>
+                    
                     <div class="input-stacked"><label>Failure Mode</label><input type="text" id="popMode" oninput="saveCurrentRowData()"></div>
                     <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
                         <div style="flex: 1; min-width: 250px;"><label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 5px; color: var(--text-heading);">Failure Mechanism</label><select id="popMechPreset" onchange="saveCurrentRowData()"></select></div>
@@ -392,12 +397,12 @@
             <div class="section-divider" style="margin: 15px 0;"></div>
             
             <p style="margin-bottom:10px; font-weight:bold; color:var(--text-heading);">Table of Contents Style:</p>
-            <label class="setting-row">
-                <input type="radio" name="pdfTocStyle" value="grouped" checked>
+            <label class="setting-row" id="wrapGroupTOC">
+                <input type="radio" name="pdfTocStyle" value="grouped" id="pdfGroupTOC" checked>
                 Group Interface Links (e.g. "Rows 12-15")
             </label>
-            <label class="setting-row">
-                <input type="radio" name="pdfTocStyle" value="rpn">
+            <label class="setting-row" id="wrapShowRPN">
+                <input type="radio" name="pdfTocStyle" value="rpn" id="pdfShowRPN">
                 Show Un-Grouped Links with RPN Values
             </label>
             
@@ -455,8 +460,19 @@
     }
     function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
 
-    // --- Image Auto-Conversion to JPEG (Safeguard for WebP/HEIC) ---
+    // --- LOSSLESS IMAGE Auto-Conversion ---
     function processImageFile(fileOrBlob, callback) {
+        // If natively supported format, BYPASS canvas to preserve 100% original quality
+        if (fileOrBlob.type === 'image/jpeg' || fileOrBlob.type === 'image/png') {
+            let reader = new FileReader();
+            reader.onload = function(event) { 
+                callback(event.target.result); 
+            };
+            reader.readAsDataURL(fileOrBlob);
+            return;
+        }
+
+        // If WebP/HEIC/BMP, gracefully redraw to lossless PNG for PDF engine compatibility
         let reader = new FileReader();
         reader.onload = function(event) { 
             let img = new Image();
@@ -465,7 +481,7 @@
                 canvas.width = img.width; canvas.height = img.height;
                 let ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
-                callback(canvas.toDataURL('image/jpeg', 0.9));
+                callback(canvas.toDataURL('image/png')); 
             };
             img.src = event.target.result;
         }; 
@@ -539,6 +555,16 @@
     function handleEnter(e, func) { if (e.key === 'Enter') { e.preventDefault(); func(); } }
     
     // Auto-Sweepers for Tabs
+    function sweepComponents() {
+        let el = document.getElementById('compInput');
+        if (el && el.value.trim() !== '') {
+            el.value.split(',').map(v => cleanName(v)).filter(v => v).forEach(val => {
+                if (!components.includes(val)) { components.push(val); if (!featuresByComp[val]) featuresByComp[val] = []; }
+            });
+            el.value = ''; renderComponents();
+        }
+    }
+    
     function sweepFeatures() {
         components.forEach(c => {
             let inId = `featInp_${c.replace(/\s/g,'_')}`; let el = document.getElementById(inId);
@@ -567,9 +593,12 @@
     }
 
     function switchTab(step) {
-        // Trigger sweeps before checking validations
-        if(document.getElementById('tab2').classList.contains('active')) sweepFeatures();
-        if(document.getElementById('tab4').classList.contains('active')) { sweepDimensions(); saveFeatImageDescs(); harvestDimensions(); }
+        try {
+            // Trigger sweeps before checking validations
+            if(document.getElementById('tab1').classList.contains('active')) sweepComponents();
+            if(document.getElementById('tab2').classList.contains('active')) sweepFeatures();
+            if(document.getElementById('tab4').classList.contains('active')) { sweepDimensions(); saveFeatImageDescs(); harvestDimensions(); }
+        } catch(err) { console.error("Sweeper Error:", err); }
 
         // Validation Warnings (Non-blocking)
         if (step >= 3 && step <= 6) {
@@ -620,11 +649,18 @@
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                components = data.components || []; featuresByComp = data.featuresByComp || {}; interfaces = data.interfaces || {}; dimsByFeature = data.dimsByFeature || {};
+                components = Array.isArray(data.components) ? data.components : [];
+                featuresByComp = data.featuresByComp || {};
+                interfaces = data.interfaces || {};
+                dimsByFeature = data.dimsByFeature || {};
                 featImages = data.featImages || {};
-                availablePresets = data.availablePresets || availablePresets; mechPresets = data.mechPresets || []; imgDescPresets = data.imgDescPresets || [];
-                assignmentMode = data.assignmentMode || 'global'; globalDimAssignments = data.globalDimAssignments || {}; specificDimAssignments = data.specificDimAssignments || {};
-                workingTableData = data.workingTableData || [];
+                availablePresets = Array.isArray(data.availablePresets) && data.availablePresets.length > 0 ? data.availablePresets : [{ ext1: 'too high', ext2: 'too low' }, { ext1: 'too large', ext2: 'too small' }];
+                mechPresets = Array.isArray(data.mechPresets) ? data.mechPresets : [];
+                imgDescPresets = Array.isArray(data.imgDescPresets) ? data.imgDescPresets : [];
+                assignmentMode = data.assignmentMode || 'global';
+                globalDimAssignments = data.globalDimAssignments || {};
+                specificDimAssignments = data.specificDimAssignments || {};
+                workingTableData = Array.isArray(data.workingTableData) ? data.workingTableData : [];
                 
                 let modeEl = document.querySelector(`input[name="assignMode"][value="${assignmentMode}"]`);
                 if(modeEl) modeEl.checked = true;
@@ -632,7 +668,7 @@
                 harvestDimensions(); renderComponents(); renderFeaturesTab(); buildFeatureMatrix(); renderDimensionsTab(); renderSettingsTab(); renderMechPresets(); renderImgDescPresets();
                 alert("Session loaded successfully!"); document.getElementById('importFile').value = ''; 
             } catch (err) { 
-                alert("Error loading session: " + err.message); console.error("Session Import Error:", err);
+                alert("Error loading session data.\n\nMessage: " + err.message); console.error("Session Import Error:", err);
             }
         }; reader.readAsText(file);
     }
@@ -749,20 +785,7 @@
 
     // --- TAB 3: Matrix ---
     function updateMatrixTotalRows() {
-        let total = 0;
-        let allFeats = []; components.forEach(c => { (featuresByComp[c]||[]).forEach(f => allFeats.push({c, f})); });
-        for (let i=0; i<allFeats.length; i++) {
-            for (let j=0; j<allFeats.length; j++) {
-                if (allFeats[i].c !== allFeats[j].c) {
-                    let key = [`${allFeats[i].c}|${allFeats[i].f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
-                    if (interfaces[key]) {
-                        let causes = 0;
-                        (dimsByFeature[`${allFeats[i].c}|${allFeats[i].f}`] || []).forEach(d => { causes += getExtremes(allFeats[i].c, allFeats[i].f, d).length; });
-                        total += causes === 0 ? 1 : causes;
-                    }
-                }
-            }
-        }
+        let total = Object.values(interfaces).filter(v => v === true).length;
         document.getElementById('matrixTotalCount').innerText = total;
     }
 
@@ -811,7 +834,7 @@
             if (!dimsByFeature[key].includes(val)) dimsByFeature[key].push(val);
         });
         document.getElementById(inputId).value = ''; 
-        renderDimensionsTab(); harvestDimensions(); updateMatrixTotalRows();
+        renderDimensionsTab(); harvestDimensions(); 
     }
 
     function removeDimension(comp, feat, dim) {
@@ -821,7 +844,7 @@
         
         let key = `${comp}|${feat}`; dimsByFeature[key] = dimsByFeature[key].filter(x => x !== dim);
         workingTableData = workingTableData.filter(r => !(r.cause && rxCause.test(r.cause)));
-        renderDimensionsTab(); harvestDimensions(); updateMatrixTotalRows();
+        renderDimensionsTab(); harvestDimensions(); 
     }
 
     function renameDimension(comp, feat, oldD) {
@@ -950,12 +973,6 @@
     });
 
     // --- TAB 5: Settings ---
-    function harvestDimensions() {
-        let cg = new Set(), cs = new Set();
-        Object.keys(dimsByFeature).forEach(k => { (dimsByFeature[k]||[]).forEach(d => { cg.add(d); cs.add(`${k}|${d}`); }); });
-        let def = availablePresets.length ? `${availablePresets[0].ext1}|${availablePresets[0].ext2}` : "too high|too low";
-        cg.forEach(d => { if (!globalDimAssignments[d]) globalDimAssignments[d] = def; }); cs.forEach(k => { if (!specificDimAssignments[k]) specificDimAssignments[k] = def; });
-    }
     function toggleAssignMode() {
         let old = assignmentMode; assignmentMode = document.querySelector('input[name="assignMode"]:checked').value;
         if(old === 'global' && assignmentMode === 'specific') { Object.keys(specificDimAssignments).forEach(k => { let d = k.split('|')[2]; if (globalDimAssignments[d]) specificDimAssignments[k] = globalDimAssignments[d]; }); }
@@ -969,15 +986,24 @@
             Object.keys(specificDimAssignments).sort().forEach(k => { let [c, f, d] = k.split('|'); html += `<div class="dim-assignment-row"><span><strong>${c}</strong> ➔ ${f} ➔ <em>${d}</em></span><select onchange="updateAssign('specific','${k}',this.value)">${opts}</select></div>`; });
         }
         document.getElementById('assignmentsContainer').innerHTML = html || '<em>No dims found.</em>';
-        setTimeout(() => { 
-            if(assignmentMode==='global') Object.keys(globalDimAssignments).forEach((d,i) => document.querySelectorAll('#assignmentsContainer select')[i].value = globalDimAssignments[d]);
-            else Object.keys(specificDimAssignments).forEach((k,i) => document.querySelectorAll('#assignmentsContainer select')[i].value = specificDimAssignments[k]);
-        }, 10);
+        
+        if (assignmentMode === 'global') {
+            Object.keys(globalDimAssignments).sort().forEach((d, i) => {
+                let els = document.querySelectorAll('#assignmentsContainer select');
+                if(els[i]) els[i].value = globalDimAssignments[d];
+            });
+        } else {
+            Object.keys(specificDimAssignments).sort().forEach((k, i) => {
+                let els = document.querySelectorAll('#assignmentsContainer select');
+                if(els[i]) els[i].value = specificDimAssignments[k];
+            });
+        }
+        
         document.getElementById('presetBody').innerHTML = availablePresets.map((p,i) => `<tr><td>${p.ext1}</td><td>${p.ext2}</td><td><button class="btn-danger" onclick="remPreset(${i})">Remove</button></td></tr>`).join('');
     }
     function updateAssign(m, k, v) { if (m === 'global') globalDimAssignments[k] = v; else specificDimAssignments[k] = v; }
-    function addPreset() { let e1 = document.getElementById('presetExt1').value.trim(), e2 = document.getElementById('presetExt2').value.trim(); if(!e1||!e2) return; availablePresets.push({ext1:e1, ext2:e2}); document.getElementById('presetExt1').value=''; document.getElementById('presetExt2').value=''; harvestDimensions(); renderSettingsTab(); updateMatrixTotalRows(); }
-    function remPreset(i) { let r = `${availablePresets[i].ext1}|${availablePresets[i].ext2}`; availablePresets.splice(i,1); harvestDimensions(); renderSettingsTab(); updateMatrixTotalRows(); }
+    function addPreset() { let e1 = document.getElementById('presetExt1').value.trim(), e2 = document.getElementById('presetExt2').value.trim(); if(!e1||!e2) return; availablePresets.push({ext1:e1, ext2:e2}); document.getElementById('presetExt1').value=''; document.getElementById('presetExt2').value=''; harvestDimensions(); renderSettingsTab(); }
+    function remPreset(i) { let r = `${availablePresets[i].ext1}|${availablePresets[i].ext2}`; availablePresets.splice(i,1); harvestDimensions(); renderSettingsTab(); }
 
     function addMechPreset() { document.getElementById('mechInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!mechPresets.includes(v)) mechPresets.push(v); }); document.getElementById('mechInput').value=''; renderMechPresets(); }
     function remMechPreset(i) { mechPresets.splice(i, 1); renderMechPresets(); }
@@ -1112,6 +1138,31 @@
         document.getElementById('progressText').innerText = `Row ${populateIndex+1} of ${t} (${p}% Complete)`; document.getElementById('progressBar').style.width = `${p}%`;
         document.getElementById('popInterface').innerText = r.interface || "N/A"; document.getElementById('popCause').innerText = r.cause || "N/A";
         
+        // --- INJECT REFERENCE IMAGES ---
+        let refHtml = '';
+        let match = r.interface ? r.interface.match(/(.+) \((.+)\) - (.+) \((.+)\)/) : null;
+        if(match) {
+            let c1=match[1], f1=match[2], c2=match[3], f2=match[4];
+            let imgs1 = featImages[`${c1}|${f1}`] || [];
+            let imgs2 = featImages[`${c2}|${f2}`] || [];
+            let allImgs = [...imgs1.map(img => ({...img, title: `${c1} • ${f1}`})), ...imgs2.map(img => ({...img, title: `${c2} • ${f2}`}))];
+
+            if(allImgs.length > 0) {
+                refHtml = `<div style="margin-bottom: 20px;"><strong style="font-size:13px; color:var(--text-muted); text-transform:uppercase;">Reference Images for this Interface:</strong><div style="display:flex; gap:15px; flex-wrap:wrap; padding: 10px 0;">`;
+                allImgs.forEach(img => {
+                    let desc = img.descPreset ? (img.descDetails ? `${img.descPreset}: ${img.descDetails}` : img.descPreset) : (img.descDetails || "");
+                    refHtml += `<div style="border: 1px solid var(--border); border-radius:6px; padding:10px; background:var(--bg); flex: 1 1 48%; max-width: 48%; box-sizing: border-box; display: flex; flex-direction: column;">
+                        <div style="font-size:14px; font-weight:bold; margin-bottom:8px; color:var(--primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${img.title}">${img.title}</div>
+                        <a href="${img.dataUrl}" target="_blank" style="display:block; flex-grow:1; text-align:center;"><img src="${img.dataUrl}" style="width:100%; height:auto; max-height:400px; object-fit:contain; border-radius:4px; margin-bottom:8px; border:1px solid var(--border);"></a>
+                        <div style="font-size:12px; color:var(--text-main); line-height:1.4;" title="${desc}">${desc || 'No description'}</div>
+                    </div>`;
+                });
+                refHtml += `</div></div>`;
+            }
+        }
+        document.getElementById('popReferenceImages').innerHTML = refHtml;
+        // -------------------------------
+
         document.getElementById('popMode').value = r.mode || ""; document.getElementById('popEffect').value = r.effect || "";
         document.getElementById('popSev').value = r.sev || ""; document.getElementById('popOcc').value = r.occ || ""; document.getElementById('popDet').value = r.det || "";
         document.getElementById('popMechDetails').value = r.mechDetails || "";
@@ -1334,10 +1385,20 @@
                         let [c, f] = key.split('|');
                         imgs.forEach((img, imgIndex) => {
                             content.push({ text: '', pageBreak: 'before', id: imgIndex === 0 ? `featImg_${key.replace(/\s|\|/g,'_')}` : null });
-                            content.push({ text: `${c} • ${f} (Reference)`, style: 'header', margin: [0, 0, 0, 20] });
-                            content.push({ image: img.dataUrl, width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
-                            let desc = img.descPreset ? (img.descDetails ? `${img.descPreset}: ${img.descDetails}` : img.descPreset) : (img.descDetails || "");
-                            if (desc) content.push({ text: desc, alignment: 'center', italics: true, color: '#475569', fontSize: 10, margin: [0, 0, 0, 20] });
+                            content.push({ text: `${c} • ${f} (Reference)`, style: 'header', margin: [0, 0, 0, 15] });
+                            
+                            let preset = img.descPreset || "Reference Image";
+                            let caption = img.descDetails || "";
+                            
+                            content.push({ text: preset, style: 'subheader', margin: [0, 0, 0, 5] });
+                            if (caption) {
+                                content.push({ text: caption, style: 'caption', margin: [0, 0, 0, 15] });
+                            } else {
+                                content.push({ text: ' ', margin: [0, 0, 0, 15] });
+                            }
+                            
+                            // 500x550 bounds ensure it fits on the page below the headers without overflowing
+                            content.push({ image: img.dataUrl, fit: [500, 550], alignment: 'center', margin: [0, 0, 0, 15] });
                         });
                     }
                 });
@@ -1382,20 +1443,19 @@
                 if (r.images && r.images.length > 0) {
                     r.images.forEach((img) => {
                         content.push({ text: '', pageBreak: 'before' });
-                        content.push({ text: `Attachment: Row ${r.oIndex + 1}`, style: 'header', margin: [0, 0, 0, 10] });
+                        content.push({ text: `Attachment: Row ${r.oIndex + 1}`, style: 'header', margin: [0, 0, 0, 15] });
                         
-                        let desc = img.descPreset ? (img.descDetails ? `${img.descPreset}: ${img.descDetails}` : img.descPreset) : (img.descDetails || "No description provided.");
-                        let descParts = desc.split(': ');
-                        let preset = descParts[0]; let caption = descParts.slice(1).join(': ') || preset;
-
-                        if (descParts.length > 1) {
-                            content.push({ text: preset, style: 'subheader', margin: [0, 0, 0, 15] });
-                            content.push({ image: img.dataUrl, width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
-                            content.push({ text: caption, style: 'caption', alignment: 'center', margin: [0, 0, 0, 20] });
+                        let preset = img.descPreset || "Attached Image";
+                        let caption = img.descDetails || "";
+                        
+                        content.push({ text: preset, style: 'subheader', margin: [0, 0, 0, 5] });
+                        if (caption) {
+                            content.push({ text: caption, style: 'caption', margin: [0, 0, 0, 15] });
                         } else {
-                            content.push({ image: img.dataUrl, width: 450, alignment: 'center', margin: [0, 0, 0, 15] });
-                            content.push({ text: desc, style: 'caption', alignment: 'center', margin: [0, 0, 0, 20] });
+                            content.push({ text: ' ', margin: [0, 0, 0, 15] });
                         }
+                        
+                        content.push({ image: img.dataUrl, fit: [500, 550], alignment: 'center', margin: [0, 0, 0, 15] });
                     });
                 }
                 if (i < processRows.length - 1) content.push({ text: '', pageBreak: 'after' });
@@ -1430,3 +1490,5 @@
 </script>
 </body>
 </html>
+    
+    
