@@ -28,6 +28,7 @@ List the specific physical traits of each part you just added (e.g., *mounting h
 
 ### 4. Interfaces Matrix
 A grid maps every feature against every other feature. Toggle checkboxes to define physical interactions. You can use bulk row/column toggles (☑) to select or deselect entire features at once.
+* **Matrix Comments:** Click the `💬` button on any intersection cell to add/edit inline design comments. Cells with comments feature an orange corner dogear indicator. Hovering over a cell displays the comment text in a styled HTML tooltip. Comments cascade automatically during component/feature renames, serialize with the JSON session, and export directly as cell comments in the Excel worksheet.
 
 ### 5. Settings & Presets
 * **Manage Dimension Presets:** Define how your dimensions fail (e.g., *too high/too low* or single extremes like *too large*).
@@ -37,10 +38,12 @@ A grid maps every feature against every other feature. Toggle checkboxes to defi
 
 ### 6. Generate & Populate
 * **Form View:** Step through every generated cause. Visual context (Feature Reference Images) is shown as you score.
-* **Navigation:** Skip directly to incomplete rows using the **Skip to Next Unfilled** search button.
+* **Navigation:** Skip directly to incomplete rows using the **Skip to Next Unfilled** search button, or use the **Prev/Next Dimension** (⏮/⏭) and **Prev/Next Configuration** (◀/▶) buttons to jump between dimensions and extreme configurations.
+* **Feedback Animations:** Smooth visual flash highlights pulse the Interface/Cause box and container card upon navigation to visually confirm row changes.
 * **Scoring:** Select Failure Modes and Effects from presets and assign S, O, D values. RPN is calculated automatically.
-* **Attach Row Images:** Paste/upload reference images directly into specific rows with multi-line captions and clean zoom-clamped previews.
-* **Export:** Export directly to a clean 9-column Excel spreadsheet.
+* **Attach Row Images:** Paste/upload reference images directly into specific rows with multi-line captions and clean zoom-clamped previews, or quickly select existing reference images from your feature library.
+* **Reference Image De-duplication:** Duplicate reference images under the "Reference Images for this Interface" section are automatically filtered out, ensuring a clean, uncluttered interface.
+* **Export:** Export directly to a clean 9-column Excel spreadsheet. If 0 rows are filled, you can export a skeleton sheet containing all checked interfaces and dimensions.
 
 ### 7. PDF Report
-Upload the `.json` session file. The tool compiles a professional, paginated PDF report complete with a clickable Table of Contents, page-break layouts, and reference images consolidated into an Appendix at the end with dynamic back-links.
+Upload the `.json` session file. The tool compiles a professional, paginated PDF report complete with a clickable Table of Contents, page-break layouts, interface comments/notes (matrix comments are integrated as dedicated context notes under respective failure lines), and reference images consolidated into an Appendix at the end with dynamic back-links.

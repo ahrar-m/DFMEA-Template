@@ -179,6 +179,243 @@
             padding: 4px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
         }
         .dim-index-btn:hover { background: var(--primary); color: white; }
+
+        #popCauseBox {
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+        }
+
+        @keyframes flash-highlight-box {
+            0% { 
+                border-color: var(--primary); 
+                box-shadow: 0 0 18px rgba(59, 130, 246, 0.85); 
+                background-color: rgba(59, 130, 246, 0.12); 
+            }
+            50% {
+                border-color: var(--primary);
+                box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+                background-color: rgba(59, 130, 246, 0.06);
+            }
+            100% { 
+                border-color: var(--border); 
+                box-shadow: none; 
+                background-color: var(--highlight-bg); 
+            }
+        }
+        @keyframes flash-highlight-card {
+            0% { border-color: var(--primary); box-shadow: 0 0 16px rgba(59, 130, 246, 0.5); }
+            100% { border-color: var(--border); box-shadow: none; }
+        }
+        .flash-active {
+            animation: flash-highlight-box 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .flash-active-card {
+            animation: flash-highlight-card 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        
+        /* Modal Picker Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .modal-backdrop.show {
+            opacity: 1;
+        }
+        .modal-dialog {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: var(--shadow);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            max-height: 80vh;
+        }
+        .modal-backdrop.show .modal-dialog {
+            transform: scale(1) translateY(0);
+        }
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-heading);
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.15s;
+        }
+        .modal-close:hover {
+            color: var(--text-heading);
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .image-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        .image-picker-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            aspect-ratio: 1 / 1.35;
+        }
+        .image-picker-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+            transform: translateY(-2px);
+        }
+        .image-picker-img-wrap {
+            aspect-ratio: 1/1;
+            background: var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border);
+        }
+        .image-picker-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .image-picker-label {
+            font-size: 11px;
+            padding: 6px;
+            text-align: center;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Matrix Comments UI Redesign Styles */
+        .matrix-cell-relative {
+            position: relative !important;
+            padding: 12px !important;
+            min-width: 50px;
+            height: 50px;
+        }
+        .matrix-cell-relative:hover {
+            background-color: rgba(59, 130, 246, 0.08) !important;
+        }
+        body.light-mode .matrix-cell-relative:hover {
+            background-color: rgba(37, 99, 235, 0.05) !important;
+        }
+        .matrix-dogear {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 10px 10px 0;
+            border-color: transparent var(--primary) transparent transparent;
+            pointer-events: none;
+        }
+        .matrix-dogear.has-comment {
+            border-color: transparent #f59e0b transparent transparent;
+        }
+        .matrix-comment-btn {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            display: none;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease, background 0.1s ease;
+        }
+        .matrix-cell-relative:hover .matrix-comment-btn {
+            display: flex;
+        }
+        .matrix-comment-btn:hover {
+            background: var(--primary-hover);
+            transform: scale(1.1);
+        }
+        .matrix-tooltip {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            width: 200px;
+            font-size: 11px;
+            color: var(--text-main);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 100;
+            pointer-events: none;
+            white-space: normal;
+            word-break: break-word;
+            text-align: left;
+            line-height: 1.4;
+        }
+        .matrix-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: var(--border) transparent transparent transparent;
+        }
+        body.light-mode .matrix-tooltip {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            background: #ffffff;
+        }
+        .matrix-cell-relative:hover .matrix-tooltip {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -343,7 +580,7 @@
             
             <div id="subTabForm" class="sub-tab-content active">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-                    <div style="background: var(--highlight-bg); padding: 12px; border: 1px dashed var(--border); border-radius: 4px; flex: 1; min-width: 300px;">
+                    <div id="popCauseBox" style="background: var(--highlight-bg); padding: 12px; border: 1px dashed var(--border); border-radius: 4px; flex: 1; min-width: 300px;">
                         <p style="margin: 0 0 5px 0; font-size: 15px; color: var(--text-heading);"><strong>Interface:</strong> <span id="popInterface"></span></p>
                         <p style="margin: 0; color: #ef4444; font-size: 15px;"><strong>Cause:</strong> <span id="popCause"></span></p>
                     </div>
@@ -359,7 +596,7 @@
                 <p id="progressText" style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">Row 1 of X</p>
                 <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
 
-                <div class="populate-card">
+                <div class="populate-card" id="popCard">
                     <div id="popReferenceImages"></div>
                     
                     <div style="background: var(--highlight-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 20px;">
@@ -420,6 +657,14 @@
                         <button class="btn-warning" style="font-size: 14px;" onclick="duplicateCurrentRow()">+ Duplicate Row</button>
                         <button class="btn-info" onclick="skipToNextUnfilled()" title="Skip to Next Unfilled Row">🔍 Skip to Next Unfilled</button>
                         <button class="btn-primary" onclick="navigatePopulate(1)" id="btnNextRow">Next ➔</button>
+                    </div>
+
+                    <!-- Dimension & Configuration Navigation Buttons -->
+                    <div style="margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; background: var(--highlight-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                        <button class="btn-outline" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="navigateNextDimension(-1)" title="Go to the first row of the previous dimension">⏮ Prev Dimension</button>
+                        <button class="btn-outline" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="navigateDimensionwise(-1)" title="Go to the previous configuration of the current dimension">◀ Prev Configuration</button>
+                        <button class="btn-outline" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="navigateDimensionwise(1)" title="Go to the next configuration of the current dimension">Next Configuration ▶</button>
+                        <button class="btn-outline" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="navigateNextDimension(1)" title="Go to the first row of the next dimension">Next Dimension ⏭</button>
                     </div>
                 </div>
             </div>
@@ -632,6 +877,7 @@
     let components = []; let featuresByComp = {}; let interfaces = {}; let dimsByFeature = {};  
     let featImages = {}; 
     let dimAssignments = {}; 
+    let interfaceComments = {}; 
     let finalTableData = []; let workingTableData = []; let populateIndex = 0;
     
     let pdfGenerationData = { rows: [], imageMap: {}, featImagesMap: [] };
@@ -642,6 +888,127 @@
     function getAffectedPopulatedRows(predicate) { return workingTableData.filter(predicate).filter(isRowPopulated).length; }
 
     function handleEnter(e, func) { if (e.key === 'Enter') { e.preventDefault(); func(); } }
+
+    function triggerFlashFeedback(el) {
+        if (el) {
+            el.classList.remove('flash-active');
+            void el.offsetWidth;
+            el.classList.add('flash-active');
+            return;
+        }
+        let causeBox = document.getElementById('popCauseBox');
+        let card = document.getElementById('popCard');
+        if (causeBox) {
+            causeBox.classList.remove('flash-active');
+            void causeBox.offsetWidth;
+            causeBox.classList.add('flash-active');
+        }
+        if (card) {
+            card.classList.remove('flash-active-card');
+            void card.offsetWidth;
+            card.classList.add('flash-active-card');
+        }
+    }
+
+    function getRowDimKey(r) {
+        if (!r) return null;
+        if (r.comp1 && r.feat1 && r.dim) {
+            return `${r.comp1}|${r.feat1}|${r.dim}`;
+        }
+        if (!r.cause) return null;
+        for (let c of components) {
+            let feats = featuresByComp[c] || [];
+            for (let f of feats) {
+                if (r.cause.startsWith(c + " " + f + " ")) {
+                    let suffix = r.cause.slice((c + " " + f + " ").length);
+                    let dims = dimsByFeature[`${c}|${f}`] || [];
+                    for (let d of dims) {
+                        if (suffix.startsWith(d + " ")) {
+                            return `${c}|${f}|${d}`;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    function navigateDimensionwise(dir) {
+        saveCurrentRowData();
+        if (!workingTableData.length) return;
+        let currentKey = getRowDimKey(workingTableData[populateIndex]);
+        if (!currentKey) {
+            alert("Could not resolve the dimension for the current row.");
+            return;
+        }
+        
+        let matchingIndices = [];
+        workingTableData.forEach((r, idx) => {
+            if (getRowDimKey(r) === currentKey) {
+                matchingIndices.push(idx);
+            }
+        });
+        
+        if (matchingIndices.length <= 1) {
+            alert("No other configurations exist for this dimension.");
+            return;
+        }
+        
+        let pos = matchingIndices.indexOf(populateIndex);
+        let nextPos = pos + dir;
+        if (nextPos >= 0 && nextPos < matchingIndices.length) {
+            populateIndex = matchingIndices[nextPos];
+            renderPopulateStep();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            alert(dir > 0 ? "You are at the last configuration for this dimension." : "You are at the first configuration for this dimension.");
+        }
+    }
+
+    function navigateNextDimension(dir) {
+        saveCurrentRowData();
+        if (!workingTableData.length) return;
+        
+        let dimKeys = [];
+        let dimFirstIndices = {};
+        
+        workingTableData.forEach((r, idx) => {
+            let key = getRowDimKey(r);
+            if (key) {
+                if (!dimFirstIndices.hasOwnProperty(key)) {
+                    dimKeys.push(key);
+                    dimFirstIndices[key] = idx;
+                }
+            }
+        });
+        
+        if (dimKeys.length === 0) {
+            alert("No dimensions resolved in the table.");
+            return;
+        }
+        
+        let currentKey = getRowDimKey(workingTableData[populateIndex]);
+        if (!currentKey) {
+            alert("Could not resolve the dimension for the current row.");
+            return;
+        }
+        
+        let currentDimIdx = dimKeys.indexOf(currentKey);
+        if (currentDimIdx === -1) {
+            alert("Could not locate current dimension in the table list.");
+            return;
+        }
+        
+        let nextDimIdx = currentDimIdx + dir;
+        if (nextDimIdx >= 0 && nextDimIdx < dimKeys.length) {
+            let nextKey = dimKeys[nextDimIdx];
+            populateIndex = dimFirstIndices[nextKey];
+            renderPopulateStep();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            alert(dir > 0 ? "You are at the last dimension." : "You are at the first dimension.");
+        }
+    }
 
     // --- Array Move Functions ---
     function moveComponent(idx, dir) { if(idx + dir < 0 || idx + dir >= components.length) return; arrayMove(components, idx, idx + dir); renderComponents(); }
@@ -796,6 +1163,17 @@
             }
         });
         interfaces = cleanedInterfaces;
+
+        let cleanedComments = {};
+        Object.keys(interfaceComments || {}).forEach(key => {
+            let parts = key.split('::');
+            if (parts.length === 2) {
+                if (validFeatureKeys.has(parts[0]) && validFeatureKeys.has(parts[1])) {
+                    cleanedComments[key] = interfaceComments[key];
+                }
+            }
+        });
+        interfaceComments = cleanedComments;
     }
 
     function exportSession() {
@@ -805,7 +1183,7 @@
         showLoading("Generating Session File...", 50);
         setTimeout(() => {
             try {
-                const sessionData = { components, featuresByComp, interfaces, dimsByFeature, dimAssignments, featImages, availablePresets, modePresets, effectPresets, mechPresets, imgDescPresets, workingTableData };
+                const sessionData = { components, featuresByComp, interfaces, interfaceComments, dimsByFeature, dimAssignments, featImages, availablePresets, modePresets, effectPresets, mechPresets, imgDescPresets, workingTableData };
                 const jsonStr = JSON.stringify(sessionData);
                 const blob = new Blob([jsonStr], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
@@ -828,6 +1206,7 @@
                 components = Array.isArray(data.components) ? data.components : [];
                 featuresByComp = data.featuresByComp || {};
                 interfaces = data.interfaces || {};
+                interfaceComments = data.interfaceComments || {};
                 dimsByFeature = data.dimsByFeature || {};
                 featImages = data.featImages || {};
                 availablePresets = Array.isArray(data.availablePresets) && data.availablePresets.length > 0 ? data.availablePresets : [{ ext1: 'too high', ext2: 'too low' }, { ext1: 'too large', ext2: 'too small' }];
@@ -887,11 +1266,18 @@
         components[components.indexOf(oldC)] = newC; featuresByComp[newC] = featuresByComp[oldC]; delete featuresByComp[oldC];
         
         let newInterfaces = {};
+        let newComments = {};
         Object.keys(interfaces).forEach(k => {
             let p = k.split('::'); let p1 = p[0].split('|'); let p2 = p[1].split('|');
             if(p1[0] === oldC) p1[0] = newC; if(p2[0] === oldC) p2[0] = newC;
-            newInterfaces[[p1.join('|'), p2.join('|')].sort().join('::')] = interfaces[k];
-        }); interfaces = newInterfaces;
+            let newK = [p1.join('|'), p2.join('|')].sort().join('::');
+            newInterfaces[newK] = interfaces[k];
+            if (interfaceComments[k] !== undefined) {
+                newComments[newK] = interfaceComments[k];
+            }
+        }); 
+        interfaces = newInterfaces;
+        interfaceComments = newComments;
         
         let newDims = {};
         Object.keys(dimsByFeature).forEach(k => { let [c, f] = k.split('|'); if(c === oldC) c = newC; newDims[`${c}|${f}`] = dimsByFeature[k]; }); dimsByFeature = newDims;
@@ -956,11 +1342,18 @@
         featuresByComp[comp][featuresByComp[comp].indexOf(oldF)] = newF;
         
         let newInterfaces = {};
+        let newComments = {};
         Object.keys(interfaces).forEach(k => {
             let p = k.split('::'); let p1 = p[0].split('|'); let p2 = p[1].split('|');
             if(p1[0] === comp && p1[1] === oldF) p1[1] = newF; if(p2[0] === comp && p2[1] === oldF) p2[1] = newF;
-            newInterfaces[[p1.join('|'), p2.join('|')].sort().join('::')] = interfaces[k];
-        }); interfaces = newInterfaces;
+            let newK = [p1.join('|'), p2.join('|')].sort().join('::');
+            newInterfaces[newK] = interfaces[k];
+            if (interfaceComments[k] !== undefined) {
+                newComments[newK] = interfaceComments[k];
+            }
+        }); 
+        interfaces = newInterfaces;
+        interfaceComments = newComments;
         
         let newDims = {};
         Object.keys(dimsByFeature).forEach(k => { let [c, f] = k.split('|'); if(c === comp && f === oldF) f = newF; newDims[`${c}|${f}`] = dimsByFeature[k]; }); dimsByFeature = newDims;
@@ -1166,7 +1559,7 @@
         document.getElementById('dimJumpIndex').innerHTML = jumpHtml || '<em>No components/features added yet.</em>';
 
         let html = '';
-        let presetOpts = availablePresets.map(p => { let v = `${p.ext1}|${p.ext2}`; return `<option value="${v}">${p.ext1} / ${p.ext2}</option>`; }).join('');
+        let presetOpts = availablePresets.map(p => { let v = p.ext2 ? `${p.ext1}|${p.ext2}` : p.ext1; return `<option value="${v}">${p.ext1}${p.ext2 ? ' / ' + p.ext2 : ''}</option>`; }).join('');
         let descOpts = '<option value="">-- Desc Preset --</option>' + imgDescPresets.map(m => `<option value="${m}">${m}</option>`).join('');
 
         components.forEach(c => {
@@ -1194,9 +1587,9 @@
                         
                         let selHtml = `<select onchange="updateDimAssign('${c}', '${f}', '${d}', this.value)" style="margin-left: auto; width: auto; max-width: 160px; font-size:12px; padding: 4px;">`;
                         availablePresets.forEach(p => {
-                            let v = `${p.ext1}|${p.ext2}`;
+                            let v = p.ext2 ? `${p.ext1}|${p.ext2}` : p.ext1;
                             let sel = currentVal === v ? 'selected' : '';
-                            selHtml += `<option value="${v}" ${sel}>${p.ext1} / ${p.ext2}</option>`;
+                            selHtml += `<option value="${v}" ${sel}>${p.ext1}${p.ext2 ? ' / ' + p.ext2 : ''}</option>`;
                         });
                         selHtml += `</select>`;
 
@@ -1223,6 +1616,7 @@
                                     Click to upload, or select this box and press <strong>Ctrl+V</strong> to paste
                                 </div>
                                 <button class="btn-info" style="width: auto; padding: 10px 15px;" onclick="pasteClipboardToFeat('${c}', '${f}')">📋 Paste Clipboard</button>
+                                <button class="btn-success" style="width: auto; padding: 10px 15px;" onclick="openFeatImagePicker('${c}', '${f}')">🖼️ Select from Existing</button>
                                 <button class="btn-outline" style="width: auto; padding: 10px 15px;" onclick="addEmptyFeatImage('${c}', '${f}')">+ Add Placeholder</button>
                             </div>
                             <div id="featGallery_${key.replace(/\s|\|/g,'_')}" style="margin-top: 15px;">`;
@@ -1317,12 +1711,34 @@
                 else {
                     let key = [`${allFeats[i].c}|${allFeats[i].f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
                     if (interfaces[key] === undefined) interfaces[key] = true;
-                    html += `<td><input type="checkbox" id="chk_${i}_${j}" ${interfaces[key]?'checked':''} onchange="syncFeat(${i},${j},'${key}', '${allFeats[i].c} (${allFeats[i].f}) - ${allFeats[j].c} (${allFeats[j].f})', '${allFeats[j].c} (${allFeats[j].f}) - ${allFeats[i].c} (${allFeats[i].f})')"></td>`;
+                    let hasComment = !!interfaceComments[key];
+                    let btnColor = hasComment ? 'var(--primary)' : 'var(--text-muted)';
+                    let tooltip = hasComment ? `title="${interfaceComments[key].replace(/"/g, '&quot;')}"` : 'title="Add/Edit comment"';
+                    html += `<td class="matrix-cell-relative">
+                        <input type="checkbox" id="chk_${i}_${j}" ${interfaces[key]?'checked':''} onchange="syncFeat(${i},${j},'${key}', '${allFeats[i].c} (${allFeats[i].f}) - ${allFeats[j].c} (${allFeats[j].f})', '${allFeats[j].c} (${allFeats[j].f}) - ${allFeats[i].c} (${allFeats[i].f})')">
+                        ${hasComment ? `<div class="matrix-dogear has-comment"></div>` : ''}
+                        ${hasComment ? `<div class="matrix-tooltip"><strong>Comment:</strong><br>${interfaceComments[key].replace(/"/g, '&quot;').replace(/\n/g, '<br>')}</div>` : ''}
+                        <button class="matrix-comment-btn" onclick="event.stopPropagation(); editInterfaceComment('${key}')" title="Edit comment">💬</button>
+                    </td>`;
                 }
             } html += '</tr>';
         }
         document.getElementById('matrixContainer').innerHTML = html + '</tbody></table>'; 
         document.getElementById('btnContinueFromMatrix').style.display = 'block';
+    }
+
+    function editInterfaceComment(key) {
+        let currentComment = interfaceComments[key] || '';
+        let newComment = prompt("Enter comment for this interface:", currentComment);
+        if (newComment !== null) {
+            newComment = newComment.trim();
+            if (newComment === '') {
+                delete interfaceComments[key];
+            } else {
+                interfaceComments[key] = newComment;
+            }
+            buildFeatureMatrix();
+        }
     }
 
     function toggleMatrixGroup(idx) {
@@ -1833,7 +2249,7 @@
 
     function renderPopulateStep() {
         let r = workingTableData[populateIndex]; let t = workingTableData.length; let p = Math.round(((populateIndex+1)/t)*100);
-        document.getElementById('progressText').innerText = `Row ${populateIndex+1} of ${t} (${p}% Complete)`; document.getElementById('progressBar').style.width = `${p}%`;
+        document.getElementById('progressText').innerText = `Row ${populateIndex+1} of ${t} (${p}%)`; document.getElementById('progressBar').style.width = `${p}%`;
         document.getElementById('popInterface').innerText = r.interface || "N/A"; document.getElementById('popCause').innerText = r.cause || "N/A";
         
         // --- INJECT REFERENCE IMAGES WITH PAN/ZOOM ---
@@ -1843,10 +2259,22 @@
             let c1=match[1], f1=match[2], c2=match[3], f2=match[4];
             let imgs1 = featImages[`${c1}|${f1}`] || [];
             let imgs2 = featImages[`${c2}|${f2}`] || [];
-            let allImgs = [
-                ...imgs1.map((img, idx) => ({...img, title: `${c1} • ${f1}`, c: c1, f: f1, idx: idx})), 
-                ...imgs2.map((img, idx) => ({...img, title: `${c2} • ${f2}`, c: c2, f: f2, idx: idx}))
-            ];
+            let uniqueUrls = new Set();
+            let allImgs = [];
+            let addImgs = (imgs, c, f) => {
+                imgs.forEach((img, idx) => {
+                    if (img.dataUrl) {
+                        if (!uniqueUrls.has(img.dataUrl)) {
+                            uniqueUrls.add(img.dataUrl);
+                            allImgs.push({...img, title: `${c} • ${f}`, c: c, f: f, idx: idx});
+                        }
+                    } else {
+                        allImgs.push({...img, title: `${c} • ${f}`, c: c, f: f, idx: idx});
+                    }
+                });
+            };
+            addImgs(imgs1, c1, f1);
+            addImgs(imgs2, c2, f2);
 
             if(allImgs.length > 0) {
                 refHtml = `<div style="margin-bottom: 20px;"><strong style="font-size:13px; color:var(--text-muted); text-transform:uppercase;">Reference Images for this Interface:</strong><div style="display:flex; gap:15px; flex-wrap:wrap; padding: 10px 0;">`;
@@ -1858,6 +2286,7 @@
                         
                         <div style="position:relative; overflow:hidden; border:1px solid var(--border); border-radius:4px; aspect-ratio: 1/1; width: 100%; margin-bottom: 8px; background:var(--card-bg); display:flex; justify-content:center; align-items:center;">
                             <div style="position:absolute; top:5px; right:5px; z-index:10; display:flex; gap:5px;">
+                                <button onclick="addImageToRow('${img.dataUrl}', '${img.descPreset || ''}', '${img.descDetails || ''}')" style="padding:4px 8px; font-size:11px; background: var(--success); color:white; border:none; cursor:pointer; border-radius:3px; font-weight:bold;">📥 Use in Row</button>
                                 <button onclick="resetRefZoom(this)" style="padding:4px 8px; font-size:11px; background: rgba(0,0,0,0.6); color:white; border:none; cursor:pointer; border-radius:3px;">Reset</button>
                                 <button onclick="openImageInNewTab('${img.dataUrl}')" style="padding:4px 8px; font-size:11px; background: rgba(0,0,0,0.6); color:white; border:none; cursor:pointer; border-radius:3px;">↗ Open</button>
                             </div>
@@ -1888,6 +2317,7 @@
         updateRPNDisplay(r);
         document.getElementById('btnNextRow').innerText = (populateIndex === t - 1) ? "Save Current ➔" : "Next Row ➔";
         renderImageGallery();
+        triggerFlashFeedback();
     }
 
     function saveCurrentRowData() {
@@ -1952,7 +2382,14 @@
             document.getElementById('fileInput').value = ''; 
         });
     }
-    function addImageToRow(dataUrl) { let r = workingTableData[populateIndex]; if(!r.images) r.images = []; r.images.push({ dataUrl: dataUrl, descPreset: '', descDetails: '' }); renderImageGallery(); }
+    function addImageToRow(dataUrl, descPreset, descDetails) {
+        let r = workingTableData[populateIndex];
+        if(!r.images) r.images = [];
+        r.images.push({ dataUrl: dataUrl, descPreset: descPreset || '', descDetails: descDetails || '' });
+        renderImageGallery();
+        let galleryEl = document.getElementById('imageGallery');
+        if (galleryEl) triggerFlashFeedback(galleryEl);
+    }
     function addEmptyRowImage() {
         let r = workingTableData[populateIndex];
         if(!r.images) r.images = [];
@@ -1999,14 +2436,31 @@
 
     // --- Export Excel ---
     async function exportExcel() {
-        if (!workingTableData || workingTableData.length === 0) return alert("Please fill out data in the browser first.");
-        saveCurrentRowData(); saveFeatImageDescs();
+        let tempRows = workingTableData || [];
+        if (tempRows.length === 0) {
+            generateData();
+            if (finalTableData.length > 1) {
+                if (confirm("No DFMEA rows have been generated yet. Would you like to export a skeleton Excel sheet containing all checked interfaces and dimensions?")) {
+                    tempRows = finalTableData.slice(1).map(r => ({ 
+                        interface: r[0], mode: r[1], effect: r[2], cause: r[3], 
+                        mechDetails: '', sev: r[5], occ: r[6], det: r[7], rpn: r[8], images: [] 
+                    }));
+                } else {
+                    return;
+                }
+            } else {
+                return alert("No data available to export. Please define components, features, and check some interfaces first.");
+            }
+        } else {
+            saveCurrentRowData(); saveFeatImageDescs();
+        }
+
         showLoading("Generating Excel Spreadsheet...", 0);
         
         setTimeout(async () => {
             try {
                 let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN"]];
-                workingTableData.forEach((r, idx) => {
+                tempRows.forEach((r, idx) => {
                     exportData.push([r.interface, r.mode, r.effect, r.cause, r.mechDetails || "", r.sev, r.occ, r.det, r.rpn]);
                 });
 
@@ -2026,7 +2480,13 @@
                             row.push("N/A");
                         } else {
                             let key = [`${allFeats[i].c}|${allFeats[i].f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
-                            row.push(interfaces[key] !== false ? "X" : "");
+                            let hasIface = interfaces[key] !== false;
+                            let comment = interfaceComments[key];
+                            if (hasIface) {
+                                row.push(comment ? `X (Note: ${comment})` : "X");
+                            } else {
+                                row.push("");
+                            }
                         }
                     }
                     matrixData.push(row);
@@ -2040,7 +2500,42 @@
 
                 const wsMatrix = XLSX.utils.aoa_to_sheet(matrixData);
                 wsMatrix['!cols'] = [{wch:25}, ...Array(allFeats.length).fill({wch:15})];
+                
+                // Add native cell comments to Matrix sheet
+                for (let i = 0; i < allFeats.length; i++) {
+                    for (let j = 0; j < allFeats.length; j++) {
+                        if (allFeats[i].c !== allFeats[j].c) {
+                            let key = [`${allFeats[i].c}|${allFeats[i].f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
+                            let comment = interfaceComments[key];
+                            if (comment) {
+                                let cellRef = XLSX.utils.encode_cell({ r: i + 1, c: j + 1 });
+                                if (wsMatrix[cellRef]) {
+                                    wsMatrix[cellRef].c = [{ a: "DFMEA Helper", t: comment }];
+                                }
+                            }
+                        }
+                    }
+                }
+
                 XLSX.utils.book_append_sheet(wb, wsMatrix, "Matrix");
+
+                // Generate Dedicated Notes Sheet
+                let notesData = [["Interface", "Note / Description"]];
+                Object.keys(interfaceComments).forEach(key => {
+                    if (interfaceComments[key] && interfaceComments[key].trim() !== "") {
+                        let parts = key.split("::");
+                        let p1 = parts[0].split("|");
+                        let p2 = parts[1].split("|");
+                        let ifaceLabel = `${p1[0]} (${p1[1]}) - ${p2[0]} (${p2[1]})`;
+                        notesData.push([ifaceLabel, interfaceComments[key]]);
+                    }
+                });
+                
+                if (notesData.length > 1) {
+                    const wsNotes = XLSX.utils.aoa_to_sheet(notesData);
+                    wsNotes['!cols'] = [{wch:40}, {wch:60}];
+                    XLSX.utils.book_append_sheet(wb, wsNotes, "Notes");
+                }
 
                 XLSX.writeFile(wb, "DFMEA_Export.xlsx");
                 
@@ -2076,7 +2571,8 @@
                     components: sessionJson.components || [],
                     featuresByComp: sessionJson.featuresByComp || {},
                     dimsByFeature: sessionJson.dimsByFeature || {},
-                    dimAssignments: sessionJson.dimAssignments || {}
+                    dimAssignments: sessionJson.dimAssignments || {},
+                    interfaceComments: sessionJson.interfaceComments || {}
                 };
                 
                 document.getElementById('pdfRowCount').innerText = parsedRows.length; 
@@ -2114,6 +2610,7 @@
             let dFeats = pdfGenerationData.featuresByComp || {};
             let dDims = pdfGenerationData.dimsByFeature || {};
             let dAssigns = pdfGenerationData.dimAssignments || {};
+            let dComments = pdfGenerationData.interfaceComments || {};
             
             let hasFeatData = false;
             dComp.forEach(c => {
@@ -2237,6 +2734,7 @@
                             });
                             
                             let ifaceObj = { text: r.interface, style: 'td' };
+                            let commentObj = null;
                             if (matchIf) {
                                 let c1=matchIf[1], f1=matchIf[2], c2=matchIf[3], f2=matchIf[4];
                                 let k1 = `${c1}|${f1}`, k2 = `${c2}|${f2}`;
@@ -2253,22 +2751,34 @@
                                 else tArr.push(`${c2} (${f2})`);
                                 
                                 ifaceObj = { text: tArr, style: 'td' };
+
+                                let commentKey = [`${c1}|${f1}`, `${c2}|${f2}`].sort().join('::');
+                                if (dComments && dComments[commentKey]) {
+                                    commentObj = dComments[commentKey];
+                                }
                             }
+
+                            let tableBody = [
+                                [{text: 'Component Interface', style: 'th'}, ifaceObj]
+                            ];
+                            if (commentObj) {
+                                tableBody.push([{text: 'Interface Comment', style: 'th'}, {text: commentObj, style: 'td', italics: true}]);
+                            }
+                            tableBody.push(
+                                [{text: 'Potential Cause', style: 'th'}, {text: r.cause, style: 'td'}],
+                                [{text: 'Failure Mechanism', style: 'th'}, {text: r.mechDetails || '-', style: 'td'}],
+                                [{text: 'Failure Mode', style: 'th'}, {text: r.mode || '-', style: 'td'}],
+                                [{text: 'Effect of Failure', style: 'th'}, {text: r.effect || '-', style: 'td'}],
+                                [{text: 'Severity (S)', style: 'th'}, {text: r.sev || '-', style: 'tdNum'}],
+                                [{text: 'Occurrence (O)', style: 'th'}, {text: r.occ || '-', style: 'tdNum'}],
+                                [{text: 'Detection (D)', style: 'th'}, {text: r.det || '-', style: 'tdNum'}],
+                                [{text: 'Risk Priority Number', style: 'th'}, {text: r.rpn || '-', style: 'tdRpn', color: parseInt(r.rpn) >= 100 ? '#ef4444' : '#0f172a'}]
+                            );
 
                             content.push({
                                 table: {
                                     widths: ['30%', '70%'],
-                                    body: [
-                                        [{text: 'Component Interface', style: 'th'}, ifaceObj],
-                                        [{text: 'Potential Cause', style: 'th'}, {text: r.cause, style: 'td'}],
-                                        [{text: 'Failure Mechanism', style: 'th'}, {text: r.mechDetails || '-', style: 'td'}],
-                                        [{text: 'Failure Mode', style: 'th'}, {text: r.mode || '-', style: 'td'}],
-                                        [{text: 'Effect of Failure', style: 'th'}, {text: r.effect || '-', style: 'td'}],
-                                        [{text: 'Severity (S)', style: 'th'}, {text: r.sev || '-', style: 'tdNum'}],
-                                        [{text: 'Occurrence (O)', style: 'th'}, {text: r.occ || '-', style: 'tdNum'}],
-                                        [{text: 'Detection (D)', style: 'th'}, {text: r.det || '-', style: 'tdNum'}],
-                                        [{text: 'Risk Priority Number', style: 'th'}, {text: r.rpn || '-', style: 'tdRpn', color: parseInt(r.rpn) >= 100 ? '#ef4444' : '#0f172a'}]
-                                    ]
+                                    body: tableBody
                                 },
                                 layout: {
                                     hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 2 : 1; },
@@ -2438,6 +2948,87 @@
             }, 50);
         }, 50);
     }
+
+    let pickerTargetCF = '';
+    function openFeatImagePicker(comp, feat) {
+        pickerTargetCF = `${comp}|${feat}`;
+        let grid = document.getElementById('featImagePickerGrid');
+        grid.innerHTML = '';
+        
+        let count = 0;
+        let currentImgs = featImages[pickerTargetCF] || [];
+        let currentUrls = new Set(currentImgs.map(img => img.dataUrl).filter(url => url));
+        
+        for (let key in featImages) {
+            if (key === pickerTargetCF) continue;
+            
+            let [c, f] = key.split('|');
+            let imgs = featImages[key] || [];
+            imgs.forEach((img) => {
+                if (!img.dataUrl) return; // Skip placeholders
+                if (currentUrls.has(img.dataUrl)) return; // Skip if already added
+                
+                count++;
+                let item = document.createElement('div');
+                item.className = 'image-picker-item';
+                let labelText = `${c} • ${f}`;
+                
+                item.innerHTML = `
+                    <div class="image-picker-img-wrap">
+                        <img src="${img.dataUrl}" alt="${labelText}">
+                    </div>
+                    <div class="image-picker-label" title="${labelText}">${labelText}</div>
+                `;
+                item.onclick = () => {
+                    if (!featImages[pickerTargetCF]) {
+                        featImages[pickerTargetCF] = [];
+                    }
+                    featImages[pickerTargetCF].push({
+                        dataUrl: img.dataUrl,
+                        descPreset: img.descPreset || '',
+                        descDetails: img.descDetails || ''
+                    });
+                    saveFeatImageDescs();
+                    renderDimensionsTab();
+                    closeFeatImagePickerModal();
+                };
+                grid.appendChild(item);
+            });
+        }
+        
+        if (count === 0) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px 0;">No reference images available in other features. Upload images to other features first.</div>';
+        }
+        
+        let modal = document.getElementById('featImagePickerModal');
+        modal.style.display = 'flex';
+        modal.offsetHeight; // Force reflow
+        modal.classList.add('show');
+    }
+    
+    function closeFeatImagePickerModal(e) {
+        if (e) e.preventDefault();
+        let modal = document.getElementById('featImagePickerModal');
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 250);
+    }
 </script>
+
+<div id="featImagePickerModal" class="modal-backdrop" onclick="closeFeatImagePickerModal(event)" style="display: none;">
+    <div class="modal-dialog" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Select from Existing Reference Images</h3>
+            <button class="modal-close" onclick="closeFeatImagePickerModal(event)">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="featImagePickerGrid" class="image-picker-grid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

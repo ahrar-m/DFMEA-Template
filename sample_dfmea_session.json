@@ -1,0 +1,172 @@
+{
+  "components": [
+    "Casing",
+    "PCB",
+    "Battery",
+    "Connector"
+  ],
+  "featuresByComp": {
+    "Casing": [
+      "Outer Shell",
+      "Gasket Groove"
+    ],
+    "PCB": [
+      "Microcontroller",
+      "Solder Pads"
+    ],
+    "Battery": [
+      "LiPo Cell"
+    ],
+    "Connector": [
+      "USB-C Port"
+    ]
+  },
+  "interfaces": {
+    "Battery|LiPo Cell::Casing|Gasket Groove": true,
+    "Battery|LiPo Cell::PCB|Solder Pads": true,
+    "Casing|Outer Shell::PCB|Microcontroller": true,
+    "Connector|USB-C Port::PCB|Solder Pads": true
+  },
+  "interfaceComments": {
+    "Battery|LiPo Cell::Casing|Gasket Groove": "Thermal expansion clearance check required. Gasket groove must clear battery bulge.",
+    "Battery|LiPo Cell::PCB|Solder Pads": "Risk of puncture if solder pads have sharp leads under mechanical loading.",
+    "Casing|Outer Shell::PCB|Microcontroller": "Check vertical clearance to microcontroller tall capacitors to avoid mechanical contact.",
+    "Connector|USB-C Port::PCB|Solder Pads": "Ensure structural mechanical support to avoid trace cracking under mating stress."
+  },
+  "dimsByFeature": {
+    "Casing|Outer Shell": [
+      "Wall Thickness"
+    ],
+    "Casing|Gasket Groove": [
+      "Groove Depth"
+    ],
+    "PCB|Microcontroller": [
+      "Height Clearance"
+    ],
+    "PCB|Solder Pads": [
+      "Pad Pitch"
+    ],
+    "Battery|LiPo Cell": [
+      "Cell Thickness"
+    ],
+    "Connector|USB-C Port": [
+      "Mating Depth"
+    ]
+  },
+  "dimAssignments": {
+    "Casing|Outer Shell|Wall Thickness": "+0.2mm|-0.1mm",
+    "Casing|Gasket Groove|Groove Depth": "too deep|too shallow",
+    "PCB|Microcontroller|Height Clearance": "too small|too large",
+    "PCB|Solder Pads|Pad Pitch": "too narrow|too wide",
+    "Battery|LiPo Cell|Cell Thickness": "+0.5mm (Swelled)|-0.1mm",
+    "Connector|USB-C Port|Mating Depth": "too deep|too shallow"
+  },
+  "featImages": {
+    "Casing|Outer Shell": [
+      {
+        "name": "casing_wall.png",
+        "dataUrl": "data:image/png;base64,iVBOR0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+        "descPreset": "",
+        "descDetails": "Nominal Wall Thickness spec diagram"
+      }
+    ],
+    "Battery|LiPo Cell": [
+      {
+        "name": "lipo_spec.png",
+        "dataUrl": "data:image/png;base64,iVBOR0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+        "descPreset": "",
+        "descDetails": "Battery swelling clearance allowance diagram"
+      }
+    ]
+  },
+  "availablePresets": [
+    {
+      "ext1": "too deep",
+      "ext2": "too shallow"
+    },
+    {
+      "ext1": "too high",
+      "ext2": "too low"
+    },
+    {
+      "ext1": "too narrow",
+      "ext2": "too wide"
+    },
+    {
+      "ext1": "too thick",
+      "ext2": "too thin"
+    }
+  ],
+  "modePresets": [
+    "Short circuit",
+    "Mechanical interference",
+    "Water ingress",
+    "Structural failure",
+    "Electrical open"
+  ],
+  "effectPresets": [
+    "Device inoperable",
+    "Smoke or fire hazard",
+    "Reduced battery life",
+    "Intermittent connection",
+    "Complete loss of function"
+  ],
+  "mechPresets": [
+    "Friction wear",
+    "Solder fatigue",
+    "Thermal expansion",
+    "Corrosion",
+    "Overstress deformation"
+  ],
+  "imgDescPresets": [
+    "Cross-section view",
+    "Solder joint microstructure",
+    "Interface gap analysis",
+    "FEA stress plot"
+  ],
+  "workingTableData": [
+    {
+      "interface": "Battery (LiPo Cell) - PCB (Solder Pads)",
+      "mode": "Short circuit",
+      "effect": "Smoke or fire hazard",
+      "cause": "Battery LiPo Cell Cell Thickness +0.5mm (Swelled)",
+      "mechDetails": "Battery cell swelling punctures against sharp PCB solder pad leads during heat cycles.",
+      "sev": "9",
+      "occ": "3",
+      "det": "5",
+      "rpn": "135",
+      "images": [
+        {
+          "name": "puncture_risk.png",
+          "dataUrl": "data:image/png;base64,iVBOR0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+          "descPreset": "Interface gap analysis",
+          "descDetails": "Clearance gap analysis of battery cell swelling next to solder pads."
+        }
+      ]
+    },
+    {
+      "interface": "Casing (Gasket Groove) - Battery (LiPo Cell)",
+      "mode": "Water ingress",
+      "effect": "Device inoperable",
+      "cause": "Casing Gasket Groove Groove Depth too deep",
+      "mechDetails": "Deep groove reduces gasket compression pressure, allowing moisture path under high battery temperature expansion.",
+      "sev": "8",
+      "occ": "4",
+      "det": "4",
+      "rpn": "128",
+      "images": []
+    },
+    {
+      "interface": "Casing (Outer Shell) - PCB (Microcontroller)",
+      "mode": "Mechanical interference",
+      "effect": "Complete loss of function",
+      "cause": "Casing Outer Shell Wall Thickness -0.1mm",
+      "mechDetails": "Thin wall deflects under external force, contacting microcontroller cap and causing trace fracture.",
+      "sev": "7",
+      "occ": "2",
+      "det": "3",
+      "rpn": "42",
+      "images": []
+    }
+  ]
+}
