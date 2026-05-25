@@ -23,22 +23,24 @@ List the specific physical traits of each part you just added (e.g., *mounting h
 
 ### 3. Dimensions & Feature Images
 * **Dimensions:** Add measurable dimensions for your features (e.g., *diameter, depth, thickness*). 
-* **Visual References:** Paste (`Ctrl+V`) or upload reference photos for specific component features. These will appear later to guide you while scoring rows and will be compiled into the final PDF.
+* **Visual References & Placeholders:** Add placeholder slots or upload/paste (`Ctrl+V` or one-click `Paste Clipboard`) reference photos for component features. These guide you while scoring and will be compiled into the report.
 * *Note: You can jump directly to any component using the Index at the top of the page.*
 
 ### 4. Interfaces Matrix
-A grid will generate mapping every feature against every other feature. Uncheck the boxes for feature combinations that do not physically touch or interact. You can download a high-quality image of this matrix by clicking the **Download Matrix** button.
+A grid maps every feature against every other feature. Toggle checkboxes to define physical interactions. You can use bulk row/column toggles (☑) to select or deselect entire features at once.
 
 ### 5. Settings & Presets
-* **Manage Dimension Presets:** Define how your dimensions fail (e.g., *too high/too low*). They will become available as dropdown options back in Tab 3.
-* **Dropdown Presets:** Quickly add standard dropdown options for "Failure Modes", "Failure Effects", and "Image Descriptions" using comma-separated lists.
-* **Save/Load:** Use **Save Session** (downloads a `.json` file) to safely back up your progress, and **Load Session** to restore it later.
+* **Manage Dimension Presets:** Define how your dimensions fail (e.g., *too high/too low* or single extremes like *too large*).
+* **Dropdown Presets:** Quickly add dropdown options for Failure Modes, Failure Effects, and Image Descriptions.
+* **Cascading Renames:** Edit/rename any preset (including extreme dimension presets) to automatically cascade and update all linked feature dimensions, generated cause texts, and image descriptions session-wide.
+* **Save/Load & Cleanup:** Save/load sessions as `.json` files. The tool automatically performs database garbage collection to clean up orphaned entries from deleted features or components.
 
 ### 6. Generate & Populate
-* **Form View:** Step through every generated cause. The tool will display your Feature Reference Images (from Tab 3) to give you visual context.
-* **Scoring:** Select Failure Modes and Effects from your presets, and assign your Severity, Occurrence, and Detection scores. The tool automatically calculates and color-codes your RPN.
-* **Attach Row Images:** Paste or upload reference images directly into the specific row and assign them multi-line descriptive captions. 
-* **Export:** Click **Export Excel Spreadsheet** to download your compiled data.
+* **Form View:** Step through every generated cause. Visual context (Feature Reference Images) is shown as you score.
+* **Navigation:** Skip directly to incomplete rows using the **Skip to Next Unfilled** search button.
+* **Scoring:** Select Failure Modes and Effects from presets and assign S, O, D values. RPN is calculated automatically.
+* **Attach Row Images:** Paste/upload reference images directly into specific rows with multi-line captions and clean zoom-clamped previews.
+* **Export:** Export directly to a clean 9-column Excel spreadsheet.
 
 ### 7. PDF Report
-Upload the `.json` session file you saved in Tab 5. The tool will read your data and automatically compile a formal, paginated PDF report complete with a clickable Table of Contents and dedicated image attachment pages.
+Upload the `.json` session file. The tool compiles a professional, paginated PDF report complete with a clickable Table of Contents, page-break layouts, and reference images consolidated into an Appendix at the end with dynamic back-links.

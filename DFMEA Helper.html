@@ -241,12 +241,12 @@
 
     <div id="tab4" class="tab-content">
         <h2>Feature-to-Feature Matrix</h2>
-        <div class="info-box" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-            <div>
-                <strong>Total Feature Combinations: </strong><span id="matrixTotalCount" style="font-size: 18px; color: var(--progress);">0</span>
-                <span class="hint" style="margin-top:5px; color:var(--text-main);">Hover over a feature in the table to see its assigned dimensions.</span>
-            </div>
-            <button class="btn-info" onclick="downloadMatrixSVG()" style="margin-top: 5px;">📷 Download Matrix as Vector SVG</button>
+        <div class="info-box" style="margin-bottom: 15px; border-left: 4px solid var(--accent);">
+            <strong>ℹ️ Evaluation Rule:</strong> Checked feature interfaces will be evaluated to generate DFMEA rows. Unchecked interfaces indicate no physical interaction and will be excluded (no significant impact / ignored).
+        </div>
+        <div class="info-box" style="margin-bottom: 10px;">
+            <strong>Total Feature Combinations: </strong><span id="matrixTotalCount" style="font-size: 18px; color: var(--progress);">0</span>
+            <span class="hint" style="margin-top:5px; color:var(--text-main);">Hover over a feature in the table to see its assigned dimensions.</span>
         </div>
         <div id="matrixContainer" class="matrix-wrapper"></div>
         <button class="btn-success btn-save-large" onclick="switchTab(5)" id="btnContinueFromMatrix" style="display:none; margin-top: 20px;">Continue to Settings ➔</button>
@@ -351,6 +351,7 @@
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                         <button class="btn-outline" onclick="navigatePopulate(-1)" style="width: auto; padding: 8px 12px;">⬅ Prev</button>
                         <button class="btn-warning" style="font-size: 14px; padding: 8px 12px;" onclick="duplicateCurrentRow()">+ Duplicate</button>
+                        <button class="btn-info" style="font-size: 14px; padding: 8px 12px;" onclick="skipToNextUnfilled()" title="Skip to Next Unfilled Row">🔍 Skip to Next Unfilled</button>
                         <button class="btn-primary" onclick="navigatePopulate(1)" id="btnNextRowTop" style="padding: 8px 12px;">Next ➔</button>
                     </div>
                 </div>
@@ -405,14 +406,19 @@
                     <div class="section-divider" style="margin: 20px 0;"></div>
                     <h4>🖼️ Attached Images</h4>
                     <div id="imageGallery"></div>
-                    <div class="paste-zone" id="pasteZone" tabindex="0" onclick="document.getElementById('fileInput').click()">
-                        Click here and press <strong>Ctrl+V</strong> to paste from clipboard, or click to upload a file.
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: stretch; flex-wrap: wrap;">
+                        <div class="paste-zone" id="pasteZone" tabindex="0" onclick="document.getElementById('fileInput').click()" style="margin: 0; flex: 1; padding: 15px;">
+                            Click here and press <strong>Ctrl+V</strong> to paste from clipboard, or click to upload a file.
+                        </div>
+                        <button class="btn-info" style="width: auto; padding: 10px 15px;" onclick="pasteClipboardToRowMain()">📋 Paste Clipboard</button>
+                        <button class="btn-outline" style="width: auto; padding: 10px 15px;" onclick="addEmptyRowImage()">+ Add Placeholder</button>
                     </div>
                     <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
 
                     <div style="margin-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                         <button class="btn-outline" onclick="navigatePopulate(-1)" style="width: auto;">⬅ Previous</button>
                         <button class="btn-warning" style="font-size: 14px;" onclick="duplicateCurrentRow()">+ Duplicate Row</button>
+                        <button class="btn-info" onclick="skipToNextUnfilled()" title="Skip to Next Unfilled Row">🔍 Skip to Next Unfilled</button>
                         <button class="btn-primary" onclick="navigatePopulate(1)" id="btnNextRow">Next ➔</button>
                     </div>
                 </div>
@@ -560,56 +566,7 @@
         reader.readAsDataURL(fileOrBlob);
     }
 
-    // --- Generate SVG Matrix Image Offline ---
-    function downloadMatrixSVG() {
-        let allFeats = [];
-        components.forEach(c => { (featuresByComp[c]||[]).forEach(f => allFeats.push({c, f})); });
-        let n = allFeats.length;
-        if(n < 2) return alert("Matrix is empty. Add at least two features.");
 
-        let cellW = 150; let cellH = 40;
-        let w = (n + 1) * cellW; let h = (n + 1) * cellH;
-
-        let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
-        svg += `<rect width="${w}" height="${h}" fill="#ffffff"/>`;
-        svg += `<rect x="${cellW}" y="0" width="${n*cellW}" height="${cellH}" fill="#1e293b"/>`;
-        svg += `<rect x="0" y="${cellH}" width="${cellW}" height="${n*cellH}" fill="#1e293b"/>`;
-
-        for(let i=0; i<n; i++) {
-            for(let j=0; j<n; j++) {
-                let cx = cellW + j*cellW; let cy = cellH + i*cellH;
-                let isSameComp = allFeats[i].c === allFeats[j].c;
-                if(isSameComp) {
-                    svg += `<rect x="${cx}" y="${cy}" width="${cellW}" height="${cellH}" fill="#cbd5e1" stroke="#94a3b8"/>`;
-                    svg += `<text x="${cx + cellW/2}" y="${cy + cellH/2 + 4}" font-family="sans-serif" font-size="12" fill="#475569" text-anchor="middle">N/A</text>`;
-                } else {
-                    svg += `<rect x="${cx}" y="${cy}" width="${cellW}" height="${cellH}" fill="#ffffff" stroke="#94a3b8"/>`;
-                    let key = [`${allFeats[i].c}|${allFeats[i].f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
-                    if(interfaces[key] !== false) {
-                        svg += `<circle cx="${cx + cellW/2}" cy="${cy + cellH/2}" r="8" fill="#10b981"/>`;
-                    }
-                }
-            }
-        }
-
-        for(let i=0; i<n; i++) {
-            let cx = cellW + i*cellW + cellW/2; let cy = cellH/2;
-            svg += `<text x="${cx}" y="${cy - 4}" font-family="sans-serif" font-weight="bold" font-size="12" fill="#ffffff" text-anchor="middle">${escapeHtml(allFeats[i].c)}</text>`;
-            svg += `<text x="${cx}" y="${cy + 10}" font-family="sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">${escapeHtml(allFeats[i].f)}</text>`;
-            svg += `<rect x="${cellW + i*cellW}" y="0" width="${cellW}" height="${cellH}" fill="none" stroke="#94a3b8"/>`;
-
-            let ry = cellH + i*cellH + cellH/2; let rx = cellW/2;
-            svg += `<text x="${rx}" y="${ry - 4}" font-family="sans-serif" font-weight="bold" font-size="12" fill="#ffffff" text-anchor="middle">${escapeHtml(allFeats[i].c)}</text>`;
-            svg += `<text x="${rx}" y="${ry + 10}" font-family="sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">${escapeHtml(allFeats[i].f)}</text>`;
-            svg += `<rect x="0" y="${cellH + i*cellH}" width="${cellW}" height="${cellH}" fill="none" stroke="#94a3b8"/>`;
-        }
-        svg += `</svg>`;
-
-        let blob = new Blob([svg], {type: "image/svg+xml;charset=utf-8"});
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement("a"); a.href = url; a.download = "Feature_Matrix.svg";
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    }
 
     // --- Open Image New Tab Helper ---
     function openImageInNewTab(dataUrl) {
@@ -782,7 +739,69 @@
     }
 
     // --- Session JSON ---
+    function sanitizeStateData() {
+        let cleanedFeaturesByComp = {};
+        components.forEach(comp => {
+            if (featuresByComp[comp]) {
+                cleanedFeaturesByComp[comp] = featuresByComp[comp];
+            }
+        });
+        featuresByComp = cleanedFeaturesByComp;
+
+        let validFeatureKeys = new Set();
+        components.forEach(comp => {
+            (featuresByComp[comp] || []).forEach(feat => {
+                validFeatureKeys.add(`${comp}|${feat}`);
+            });
+        });
+
+        let cleanedDimsByFeature = {};
+        Object.keys(dimsByFeature).forEach(key => {
+            if (validFeatureKeys.has(key)) {
+                cleanedDimsByFeature[key] = dimsByFeature[key];
+            }
+        });
+        dimsByFeature = cleanedDimsByFeature;
+
+        let cleanedFeatImages = {};
+        Object.keys(featImages).forEach(key => {
+            if (validFeatureKeys.has(key)) {
+                cleanedFeatImages[key] = featImages[key];
+            }
+        });
+        featImages = cleanedFeatImages;
+
+        let cleanedDimAssignments = {};
+        Object.keys(dimAssignments).forEach(key => {
+            let parts = key.split('|');
+            if (parts.length >= 3) {
+                let comp = parts[0];
+                let feat = parts[1];
+                let dim = parts.slice(2).join('|');
+                let featKey = `${comp}|${feat}`;
+                if (validFeatureKeys.has(featKey) && dimsByFeature[featKey] && dimsByFeature[featKey].includes(dim)) {
+                    cleanedDimAssignments[key] = dimAssignments[key];
+                }
+            }
+        });
+        dimAssignments = cleanedDimAssignments;
+
+        let cleanedInterfaces = {};
+        Object.keys(interfaces).forEach(key => {
+            let parts = key.split('::');
+            if (parts.length === 2) {
+                if (validFeatureKeys.has(parts[0]) && validFeatureKeys.has(parts[1])) {
+                    cleanedInterfaces[key] = interfaces[key];
+                }
+            }
+        });
+        interfaces = cleanedInterfaces;
+    }
+
     function exportSession() {
+        if (typeof saveCurrentRowData === 'function') saveCurrentRowData();
+        if (typeof saveFeatImageDescs === 'function') saveFeatImageDescs();
+        sanitizeStateData();
         showLoading("Generating Session File...", 50);
         setTimeout(() => {
             try {
@@ -819,6 +838,7 @@
                 workingTableData = Array.isArray(data.workingTableData) ? data.workingTableData : [];
                 
                 dimAssignments = data.dimAssignments || {};
+                sanitizeStateData();
                 
                 workingTableData.forEach(r => {
                     if (r.mechPreset) {
@@ -856,6 +876,7 @@
 
         components = components.filter(x => x !== c); delete featuresByComp[c];
         workingTableData = workingTableData.filter(r => !(r.interface && (r.interface.includes(`${c} (`) || r.interface.includes(`- ${c} (`))));
+        sanitizeStateData();
         renderComponents();
     }
     function renameComponent(oldC) {
@@ -924,6 +945,7 @@
         delete dimsByFeature[key];
         
         workingTableData = workingTableData.filter(r => !(r.interface && (r.interface.includes(`${comp} (${feat})`) || r.interface.includes(`- ${comp} (${feat})`))));
+        sanitizeStateData();
         renderFeaturesTab();
     }
     function renameFeature(comp, oldF) {
@@ -1028,17 +1050,85 @@
         dimAssignments[`${c}|${f}|${d}`] = val;
     }
 
-    function triggerFeatImageUpload(comp, feat) {
+    let currentFeatImageIndex = null;
+    function triggerFeatImageUpload(comp, feat, idx = null) {
         currentFeatImageTarget = `${comp}|${feat}`;
+        currentFeatImageIndex = idx;
         document.getElementById('featFileInput').click();
+    }
+    function triggerFeatImageUploadIndex(comp, feat, idx) {
+        triggerFeatImageUpload(comp, feat, idx);
     }
     function handleFeatImageUpload(e) {
         let file = e.target.files[0]; if(!file || !currentFeatImageTarget) return; 
-        processImageFile(file, (dataUrl) => { addFeatImage(currentFeatImageTarget, dataUrl); document.getElementById('featFileInput').value = ''; });
+        processImageFile(file, (dataUrl) => { 
+            if (currentFeatImageIndex !== null && featImages[currentFeatImageTarget]) {
+                featImages[currentFeatImageTarget][currentFeatImageIndex].dataUrl = dataUrl;
+            } else {
+                addFeatImage(currentFeatImageTarget, dataUrl); 
+            }
+            currentFeatImageIndex = null;
+            document.getElementById('featFileInput').value = ''; 
+            renderDimensionsTab();
+        });
     }
+
+    async function readClipboardImage(successCallback) {
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            for (const item of clipboardItems) {
+                for (const type of item.types) {
+                    if (type.startsWith('image/')) {
+                        const blob = await item.getType(type);
+                        processImageFile(blob, successCallback);
+                        return;
+                    }
+                }
+            }
+            alert("No image found in clipboard! Make sure you copied an image.");
+        } catch (err) {
+            alert("Could not access clipboard automatically: " + err.message + "\n\nTry using the 'Click to upload' option or select the paste box and press Ctrl+V.");
+        }
+    }
+
+    function pasteClipboardToFeat(comp, feat) {
+        readClipboardImage((dataUrl) => {
+            addFeatImage(`${comp}|${feat}`, dataUrl);
+        });
+    }
+
+    function pasteClipboardToFeatIndex(comp, feat, idx) {
+        let key = `${comp}|${feat}`;
+        readClipboardImage((dataUrl) => {
+            if (featImages[key]) {
+                featImages[key][idx].dataUrl = dataUrl;
+                renderDimensionsTab();
+            }
+        });
+    }
+
+    function pasteClipboardToRowMain() {
+        readClipboardImage((dataUrl) => {
+            addImageToRow(dataUrl);
+        });
+    }
+
+    function pasteClipboardToRowIndex(idx) {
+        readClipboardImage((dataUrl) => {
+            workingTableData[populateIndex].images[idx].dataUrl = dataUrl;
+            renderImageGallery();
+        });
+    }
+
     function addFeatImage(key, dataUrl) {
         if(!featImages[key]) featImages[key] = [];
         featImages[key].push({ dataUrl: dataUrl, descPreset: '', descDetails: '' }); renderDimensionsTab(); 
+    }
+    function addEmptyFeatImage(comp, feat) {
+        let key = `${comp}|${feat}`;
+        if(!featImages[key]) featImages[key] = [];
+        featImages[key].push({ dataUrl: "", descPreset: '', descDetails: '' });
+        renderDimensionsTab();
     }
     function removeFeatImage(key, idx) {
         if(featImages[key]) featImages[key].splice(idx, 1); renderDimensionsTab();
@@ -1128,19 +1218,33 @@
                     html += `</ul>
                         <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
                             <strong style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Feature Reference Images</strong>
-                            <div class="paste-zone" tabindex="0" data-cf="${key}" onclick="triggerFeatImageUpload('${c}', '${f}')" style="padding: 10px; margin-top: 10px;">
-                                Click to upload, or select this box and press <strong>Ctrl+V</strong> to paste
+                            <div style="display: flex; gap: 10px; margin-top: 10px; align-items: stretch; flex-wrap: wrap;">
+                                <div class="paste-zone" tabindex="0" data-cf="${key}" onclick="triggerFeatImageUpload('${c}', '${f}')" style="padding: 10px; margin: 0; flex: 1;">
+                                    Click to upload, or select this box and press <strong>Ctrl+V</strong> to paste
+                                </div>
+                                <button class="btn-info" style="width: auto; padding: 10px 15px;" onclick="pasteClipboardToFeat('${c}', '${f}')">📋 Paste Clipboard</button>
+                                <button class="btn-outline" style="width: auto; padding: 10px 15px;" onclick="addEmptyFeatImage('${c}', '${f}')">+ Add Placeholder</button>
                             </div>
-                            <div id="featGallery_${key.replace(/\s|\|/g,'_')}">`;
+                            <div id="featGallery_${key.replace(/\s|\|/g,'_')}" style="margin-top: 15px;">`;
                     
                     if(featImages[key] && featImages[key].length > 0) {
                         featImages[key].forEach((img, i) => {
                             let imgIdPrefix = `${key.replace(/\s|\|/g,'_')}_${i}`;
                             let upDis = i === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '';
                             let dnDis = i === featImages[key].length - 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '';
+                            
+                            let imgEl = img.dataUrl ? `<img src="${img.dataUrl}" class="img-thumb">` : 
+                            `<div class="img-thumb" style="display:flex; flex-direction:column; justify-content:center; align-items:center; background:var(--bg); border:1px dashed var(--border); padding:20px; min-height:150px; gap: 10px;">
+                                <div style="font-weight:bold; color:var(--text-muted); font-size: 13px;">📷 NO IMAGE</div>
+                                <div style="display:flex; gap:8px; width: 100%; justify-content: center;">
+                                    <button class="btn-info" style="padding:4px 8px; font-size:11px; width:auto;" onclick="triggerFeatImageUploadIndex('${c}', '${f}', ${i})">📁 Upload</button>
+                                    <button class="btn-success" style="padding:4px 8px; font-size:11px; width:auto;" onclick="pasteClipboardToFeatIndex('${c}', '${f}', ${i})">📋 Paste Clipboard</button>
+                                </div>
+                             </div>`;
+                             
                             html += `
                             <div class="img-card" style="background: var(--highlight-bg);">
-                                <img src="${img.dataUrl}" class="img-thumb">
+                                ${imgEl}
                                 <div class="img-details">
                                     <select id="fImgPre_${imgIdPrefix}" onchange="saveFeatImageDescs()">${descOpts}</select>
                                     <textarea id="fImgDet_${imgIdPrefix}" placeholder="Specific details (multi-line)..." style="width:100%; resize:vertical; padding:8px; font-size:13px; font-family:inherit; min-height:40px; border:1px solid var(--border); border-radius:4px; background:var(--card-bg); color:var(--text-main);" oninput="saveFeatImageDescs()">${img.descDetails}</textarea>
@@ -1189,15 +1293,25 @@
         if(allFeats.length < 2) return document.getElementById('matrixContainer').innerHTML = '<em>Add at least two features across your components.</em>';
         
         let html = '<table><thead><tr><th></th>';
-        allFeats.forEach(o => { 
+        allFeats.forEach((o, colIdx) => { 
             let hoverText = `Dimensions:\n` + (dimsByFeature[`${o.c}|${o.f}`] || []).join('\n');
-            html += `<th title="${hoverText}">${o.c}<br><small style="color:var(--text-muted);">${o.f}</small></th>`; 
+            html += `<th title="${hoverText}">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:2px; min-width:80px;">
+                    <button class="btn-outline" style="padding: 1px 4px; font-size: 9px; line-height: 1; width: auto; margin-bottom: 2px;" onclick="toggleMatrixGroup(${colIdx})" title="Toggle entire column">⇅</button>
+                    <span>${o.c}<br><small style="color:var(--text-muted);">${o.f}</small></span>
+                </div>
+            </th>`; 
         }); 
         html += '</tr></thead><tbody>';
         
         for (let i=0; i<allFeats.length; i++) {
             let hText = `Dimensions:\n` + (dimsByFeature[`${allFeats[i].c}|${allFeats[i].f}`] || []).join('\n');
-            html += `<tr><td title="${hText}">${allFeats[i].c}<br><small style="font-weight:normal; color:var(--text-muted);">${allFeats[i].f}</small></td>`;
+            html += `<tr><td title="${hText}">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button class="btn-outline" style="padding: 1px 4px; font-size: 9px; line-height: 1; width: auto; margin-right: 2px;" onclick="toggleMatrixGroup(${i})" title="Toggle entire row">⇄</button>
+                    <span style="text-align:left;">${allFeats[i].c}<br><small style="font-weight:normal; color:var(--text-muted);">${allFeats[i].f}</small></span>
+                </div>
+            </td>`;
             for (let j=0; j<allFeats.length; j++) {
                 if (allFeats[i].c === allFeats[j].c) html += '<td class="diagonal">N/A</td>';
                 else {
@@ -1209,6 +1323,44 @@
         }
         document.getElementById('matrixContainer').innerHTML = html + '</tbody></table>'; 
         document.getElementById('btnContinueFromMatrix').style.display = 'block';
+    }
+
+    function toggleMatrixGroup(idx) {
+        let allFeats = []; components.forEach(c => { (featuresByComp[c]||[]).forEach(f => allFeats.push({c, f})); });
+        let targetFeat = allFeats[idx];
+        
+        let targetCheckboxes = [];
+        for (let j = 0; j < allFeats.length; j++) {
+            if (targetFeat.c !== allFeats[j].c) {
+                let key = [`${targetFeat.c}|${targetFeat.f}`, `${allFeats[j].c}|${allFeats[j].f}`].sort().join('::');
+                let iface1 = `${targetFeat.c} (${targetFeat.f}) - ${allFeats[j].c} (${allFeats[j].f})`;
+                let iface2 = `${allFeats[j].c} (${allFeats[j].f}) - ${targetFeat.c} (${targetFeat.f})`;
+                targetCheckboxes.push({ key, iface1, iface2, checked: !!interfaces[key] });
+            }
+        }
+        
+        let checkedCount = targetCheckboxes.filter(tc => tc.checked).length;
+        let shouldCheck = checkedCount < targetCheckboxes.length;
+        
+        if (!shouldCheck) {
+            let ifaceStrings = new Set();
+            targetCheckboxes.forEach(tc => {
+                ifaceStrings.add(tc.iface1);
+                ifaceStrings.add(tc.iface2);
+            });
+            let popCount = getAffectedPopulatedRows(r => ifaceStrings.has(r.interface));
+            if (popCount > 0 && !confirm(`Warning: Bulk unchecking will permanently delete ${popCount} filled row(s) associated with this feature. Proceed?`)) {
+                return;
+            }
+            workingTableData = workingTableData.filter(r => !ifaceStrings.has(r.interface));
+        }
+        
+        targetCheckboxes.forEach(tc => {
+            interfaces[tc.key] = shouldCheck;
+        });
+        
+        buildFeatureMatrix();
+        updateMatrixTotalRows();
     }
 
     function syncFeat(i, j, key, iface1, iface2) { 
@@ -1234,10 +1386,26 @@
                 let active = document.activeElement;
                 if (document.getElementById('tab3').classList.contains('active') && active && active.hasAttribute('data-cf')) {
                     let targetCF = active.getAttribute('data-cf');
-                    processImageFile(blob, (dataUrl) => { addFeatImage(targetCF, dataUrl); }); 
+                    let idx = active.hasAttribute('data-idx') ? parseInt(active.getAttribute('data-idx')) : null;
+                    processImageFile(blob, (dataUrl) => { 
+                        if (idx !== null && featImages[targetCF]) {
+                            featImages[targetCF][idx].dataUrl = dataUrl;
+                            renderDimensionsTab();
+                        } else {
+                            addFeatImage(targetCF, dataUrl);
+                        }
+                    }); 
                 } 
                 else if (document.getElementById('populateSection').style.display === 'block' && document.getElementById('subTabForm').classList.contains('active')) {
-                    processImageFile(blob, (dataUrl) => { addImageToRow(dataUrl); }); 
+                    let idx = active && active.hasAttribute('data-row-idx') ? parseInt(active.getAttribute('data-row-idx')) : null;
+                    processImageFile(blob, (dataUrl) => { 
+                        if (idx !== null) {
+                            workingTableData[populateIndex].images[idx].dataUrl = dataUrl;
+                            renderImageGallery();
+                        } else {
+                            addImageToRow(dataUrl); 
+                        }
+                    }); 
                 }
             }
         }
@@ -1252,14 +1420,85 @@
                 <td><div class="action-buttons" style="justify-content:center;">
                     <button class="btn-outline" style="padding: 2px 6px; width:auto; font-size: 10px;" onclick="movePreset(${i}, -1)" ${upDis}>↑</button>
                     <button class="btn-outline" style="padding: 2px 6px; width:auto; font-size: 10px;" onclick="movePreset(${i}, 1)" ${dnDis}>↓</button>
+                    <button class="btn-warning" style="padding: 2px 6px; width:auto; font-size: 10px;" onclick="editPreset(${i})" title="Edit preset">✏️</button>
                     <button class="btn-danger" onclick="remPreset(${i})">Remove</button>
                 </div></td></tr>`;
         }).join('');
     }
+
+    function editPreset(i) {
+        let oldPreset = availablePresets[i];
+        let oldVal = `${oldPreset.ext1}|${oldPreset.ext2}`;
+        
+        let newExt1 = prompt("Edit Extreme 1:", oldPreset.ext1);
+        if (newExt1 === null) return;
+        
+        let newExt2 = prompt("Edit Extreme 2:", oldPreset.ext2);
+        if (newExt2 === null) return;
+        
+        newExt1 = newExt1.trim();
+        newExt2 = newExt2.trim();
+        if (!newExt1 && !newExt2) {
+            alert("At least one extreme value must be provided.");
+            return;
+        }
+        
+        let newPreset = { ext1: newExt1, ext2: newExt2 };
+        let newVal = `${newExt1}|${newExt2}`;
+        
+        if (oldVal === newVal) return;
+        
+        availablePresets[i] = newPreset;
+        
+        // Cascade to dimAssignments
+        Object.keys(dimAssignments).forEach(key => {
+            if (dimAssignments[key] === oldVal) {
+                dimAssignments[key] = newVal;
+                
+                let [c, f, d] = key.split('|');
+                workingTableData.forEach(r => {
+                    if (oldPreset.ext1 && r.cause === `${c} ${f} ${d} ${oldPreset.ext1}`) {
+                        r.cause = `${c} ${f} ${d} ${newExt1}`;
+                    }
+                    if (oldPreset.ext2 && r.cause === `${c} ${f} ${d} ${oldPreset.ext2}`) {
+                        r.cause = `${c} ${f} ${d} ${newExt2}`;
+                    }
+                });
+            }
+        });
+        
+        // Cascade default presets (if editing default preset at index 0)
+        if (i === 0) {
+            components.forEach(c => {
+                (featuresByComp[c] || []).forEach(f => {
+                    (dimsByFeature[`${c}|${f}`] || []).forEach(d => {
+                        let assignKey = `${c}|${f}|${d}`;
+                        if (!dimAssignments[assignKey]) {
+                            workingTableData.forEach(r => {
+                                if (oldPreset.ext1 && r.cause === `${c} ${f} ${d} ${oldPreset.ext1}`) {
+                                    r.cause = `${c} ${f} ${d} ${newExt1}`;
+                                }
+                                if (oldPreset.ext2 && r.cause === `${c} ${f} ${d} ${oldPreset.ext2}`) {
+                                    r.cause = `${c} ${f} ${d} ${newExt2}`;
+                                }
+                            });
+                        }
+                    });
+                });
+            });
+        }
+        
+        renderSettingsTab();
+        if (document.getElementById('tab3').classList.contains('active')) renderDimensionsTab();
+        if (document.getElementById('tab6').classList.contains('active')) {
+            renderPopulateStep();
+            generatePreview();
+        }
+    }
     
     function addPreset() { 
         let e1 = document.getElementById('presetExt1').value.trim(), e2 = document.getElementById('presetExt2').value.trim(); 
-        if(!e1||!e2) return; 
+        if(!e1 && !e2) return; 
         availablePresets.push({ext1:e1, ext2:e2}); 
         document.getElementById('presetExt1').value=''; document.getElementById('presetExt2').value=''; 
         renderSettingsTab(); 
@@ -1277,25 +1516,46 @@
         renderSettingsTab(); 
     }
 
-    function createPresetList(arr, remFunc, moveFunc) {
+    function createPresetList(arr, remFunc, moveFunc, renameFunc) {
         return arr.map((m,i) => {
             let upDis = i === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '';
             let dnDis = i === arr.length - 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '';
-            return `<li>${m} <div class="action-buttons">
+            return `<li><span style="word-break: break-word; flex-grow: 1; margin-right: 10px;">${m}</span> <div class="action-buttons" style="flex-shrink: 0; display: flex; gap: 4px;">
                 <button class="btn-outline" style="padding: 2px 6px; width:auto; font-size: 10px;" onclick="${moveFunc}(${i}, -1)" ${upDis}>↑</button>
                 <button class="btn-outline" style="padding: 2px 6px; width:auto; font-size: 10px;" onclick="${moveFunc}(${i}, 1)" ${dnDis}>↓</button>
-                <button class="btn-danger" onclick="${remFunc}(${i})">X</button>
+                <button class="btn-warning" style="padding: 2px 6px; width:auto; font-size: 10px;" onclick="${renameFunc}(${i})" title="Rename preset">✏️</button>
+                <button class="btn-danger" style="padding: 2px 6px; width:auto; font-size: 10px;" onclick="${remFunc}(${i})">X</button>
             </div></li>`;
         }).join('');
     }
 
     function addModePreset() { document.getElementById('modeInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!modePresets.includes(v)) modePresets.push(v); }); document.getElementById('modeInput').value=''; renderModePresets(); }
     function remModePreset(i) { modePresets.splice(i, 1); renderModePresets(); }
-    function renderModePresets() { document.getElementById('modeList').innerHTML = createPresetList(modePresets, 'remModePreset', 'moveModePreset'); }
+    function renameModePreset(i) {
+        let oldVal = modePresets[i];
+        let newVal = prompt("Rename Failure Mode Preset:", oldVal);
+        if (!newVal || newVal.trim() === "" || newVal.trim() === oldVal) return;
+        newVal = newVal.trim();
+        modePresets[i] = newVal;
+        workingTableData.forEach(r => { if (r.mode === oldVal) r.mode = newVal; });
+        renderModePresets();
+        if (document.getElementById('tab6').classList.contains('active')) renderPopulateStep();
+    }
+    function renderModePresets() { document.getElementById('modeList').innerHTML = createPresetList(modePresets, 'remModePreset', 'moveModePreset', 'renameModePreset'); }
 
     function addEffectPreset() { document.getElementById('effectInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!effectPresets.includes(v)) effectPresets.push(v); }); document.getElementById('effectInput').value=''; renderEffectPresets(); }
     function remEffectPreset(i) { effectPresets.splice(i, 1); renderEffectPresets(); }
-    function renderEffectPresets() { document.getElementById('effectList').innerHTML = createPresetList(effectPresets, 'remEffectPreset', 'moveEffectPreset'); }
+    function renameEffectPreset(i) {
+        let oldVal = effectPresets[i];
+        let newVal = prompt("Rename Effect Preset:", oldVal);
+        if (!newVal || newVal.trim() === "" || newVal.trim() === oldVal) return;
+        newVal = newVal.trim();
+        effectPresets[i] = newVal;
+        workingTableData.forEach(r => { if (r.effect === oldVal) r.effect = newVal; });
+        renderEffectPresets();
+        if (document.getElementById('tab6').classList.contains('active')) renderPopulateStep();
+    }
+    function renderEffectPresets() { document.getElementById('effectList').innerHTML = createPresetList(effectPresets, 'remEffectPreset', 'moveEffectPreset', 'renameEffectPreset'); }
 
     function addMechPreset() { document.getElementById('mechInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!mechPresets.includes(v)) mechPresets.push(v); }); document.getElementById('mechInput').value=''; renderMechPresets(); }
     function remMechPreset(i) { 
@@ -1306,7 +1566,17 @@
         renderMechPresets(); 
         if(document.getElementById('tab6').classList.contains('active')) renderPopulateStep();
     }
-    function renderMechPresets() { document.getElementById('mechList').innerHTML = createPresetList(mechPresets, 'remMechPreset', 'moveMechPreset'); }
+    function renameMechPreset(i) {
+        let oldVal = mechPresets[i];
+        let newVal = prompt("Rename Mechanism Preset:", oldVal);
+        if (!newVal || newVal.trim() === "" || newVal.trim() === oldVal) return;
+        newVal = newVal.trim();
+        mechPresets[i] = newVal;
+        workingTableData.forEach(r => { if (r.mechDetails === oldVal) r.mechDetails = newVal; });
+        renderMechPresets();
+        if (document.getElementById('tab6').classList.contains('active')) renderPopulateStep();
+    }
+    function renderMechPresets() { document.getElementById('mechList').innerHTML = createPresetList(mechPresets, 'remMechPreset', 'moveMechPreset', 'renameMechPreset'); }
 
     function addImgDescPreset() { document.getElementById('imgDescInput').value.split(',').map(v=>v.trim()).filter(v=>v).forEach(v => { if(!imgDescPresets.includes(v)) imgDescPresets.push(v); }); document.getElementById('imgDescInput').value=''; renderImgDescPresets(); renderDimensionsTab(); }
     function remImgDescPreset(i) { 
@@ -1324,7 +1594,23 @@
         if(document.getElementById('tab3').classList.contains('active')) renderDimensionsTab();
         if(document.getElementById('tab6').classList.contains('active')) renderImageGallery();
     }
-    function renderImgDescPresets() { document.getElementById('imgDescList').innerHTML = createPresetList(imgDescPresets, 'remImgDescPreset', 'moveImgDescPreset'); }
+    function renameImgDescPreset(i) {
+        let oldVal = imgDescPresets[i];
+        let newVal = prompt("Rename Image Description Preset:", oldVal);
+        if (!newVal || newVal.trim() === "" || newVal.trim() === oldVal) return;
+        newVal = newVal.trim();
+        imgDescPresets[i] = newVal;
+        Object.keys(featImages).forEach(k => { featImages[k].forEach(img => { if(img.descPreset === oldVal) img.descPreset = newVal; }); });
+        workingTableData.forEach(r => { if(r.images) r.images.forEach(img => { if(img.descPreset === oldVal) img.descPreset = newVal; }); });
+        
+        renderImgDescPresets();
+        if (document.getElementById('tab3').classList.contains('active')) renderDimensionsTab();
+        if (document.getElementById('tab6').classList.contains('active')) {
+            renderImageGallery();
+            renderPopulateStep();
+        }
+    }
+    function renderImgDescPresets() { document.getElementById('imgDescList').innerHTML = createPresetList(imgDescPresets, 'remImgDescPreset', 'moveImgDescPreset', 'renameImgDescPreset'); }
 
     function applyTextPreset(id, val) {
         if(val) {
@@ -1354,7 +1640,12 @@
                 if(interfaces[p]) {
                     let ifaceStr = `${c1} (${f1}) - ${c2} (${f2})`; let causes = false;
                     (dimsByFeature[`${c1}|${f1}`]||[]).forEach(d => {
-                        getExtremes(c1,f1,d).forEach(ext => { finalTableData.push([ifaceStr, "", "", `${c1} ${f1} ${d} ${ext}`, "", "", "", "", "", ""]); causes=true; });
+                        getExtremes(c1,f1,d).forEach(ext => { 
+                            if (ext && ext.trim() !== "") {
+                                finalTableData.push([ifaceStr, "", "", `${c1} ${f1} ${d} ${ext}`, "", "", "", "", "", ""]); 
+                                causes = true; 
+                            }
+                        });
                     });
                     if(!causes) finalTableData.push([ifaceStr, "", "", "", "", "", "", "", "", ""]);
                 }
@@ -1506,7 +1797,7 @@
         img.parentElement.addEventListener('wheel', e => {
             e.preventDefault();
             scale += e.deltaY * -0.002;
-            scale = Math.min(Math.max(0.5, 10), scale);
+            scale = Math.max(0.1, Math.min(scale, 10));
             img.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
         });
         img.addEventListener('mousedown', e => {
@@ -1617,13 +1908,57 @@
 
     function navigatePopulate(dir) { saveCurrentRowData(); let n = populateIndex + dir; if(n>=0 && n<workingTableData.length) { populateIndex = n; renderPopulateStep(); } }
     function duplicateCurrentRow() { saveCurrentRowData(); let c = workingTableData[populateIndex]; workingTableData.splice(populateIndex+1, 0, { ...c, mode:'', effect:'', sev:'', occ:'', det:'', rpn:'', mechDetails:'', images:[] }); populateIndex++; renderPopulateStep(); }
+    function skipToNextUnfilled() {
+        saveCurrentRowData();
+        let nextIdx = -1;
+        for (let i = populateIndex + 1; i < workingTableData.length; i++) {
+            if (!isRowPopulated(workingTableData[i])) {
+                nextIdx = i;
+                break;
+            }
+        }
+        if (nextIdx === -1) {
+            for (let i = 0; i < populateIndex; i++) {
+                if (!isRowPopulated(workingTableData[i])) {
+                    nextIdx = i;
+                    break;
+                }
+            }
+        }
+        if (nextIdx !== -1) {
+            populateIndex = nextIdx;
+            renderPopulateStep();
+        } else {
+            alert("All rows are currently filled!");
+        }
+    }
 
     // --- Tab 6 Row Images ---
+    let currentRowImageIndex = null;
+    function triggerRowImageUploadIndex(idx) {
+        currentRowImageIndex = idx;
+        document.getElementById('fileInput').click();
+    }
     function handleImageUpload(e) {
         let file = e.target.files[0]; if(!file) return; 
-        processImageFile(file, (dataUrl) => { addImageToRow(dataUrl); document.getElementById('fileInput').value = ''; });
+        processImageFile(file, (dataUrl) => { 
+            if (currentRowImageIndex !== null) {
+                workingTableData[populateIndex].images[currentRowImageIndex].dataUrl = dataUrl;
+                renderImageGallery();
+            } else {
+                addImageToRow(dataUrl); 
+            }
+            currentRowImageIndex = null;
+            document.getElementById('fileInput').value = ''; 
+        });
     }
     function addImageToRow(dataUrl) { let r = workingTableData[populateIndex]; if(!r.images) r.images = []; r.images.push({ dataUrl: dataUrl, descPreset: '', descDetails: '' }); renderImageGallery(); }
+    function addEmptyRowImage() {
+        let r = workingTableData[populateIndex];
+        if(!r.images) r.images = [];
+        r.images.push({ dataUrl: "", descPreset: '', descDetails: '' });
+        renderImageGallery();
+    }
     function removeImage(imgIdx) { workingTableData[populateIndex].images.splice(imgIdx, 1); renderImageGallery(); }
 
     function renderImageGallery() {
@@ -1633,9 +1968,19 @@
             r.images.forEach((img, i) => {
                 let upDis = i === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '';
                 let dnDis = i === r.images.length - 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '';
+                
+                let imgEl = img.dataUrl ? `<img src="${img.dataUrl}" class="img-thumb">` : 
+                `<div class="img-thumb" style="display:flex; flex-direction:column; justify-content:center; align-items:center; background:var(--bg); border:1px dashed var(--border); padding:20px; min-height:150px; gap:10px;">
+                    <div style="font-weight:bold; color:var(--text-muted); font-size:13px;">📷 NO IMAGE</div>
+                    <div style="display:flex; gap:8px; width:100%; justify-content:center;">
+                        <button class="btn-info" style="padding:4px 8px; font-size:11px; width:auto;" onclick="triggerRowImageUploadIndex(${i})">📁 Upload</button>
+                        <button class="btn-success" style="padding:4px 8px; font-size:11px; width:auto;" onclick="pasteClipboardToRowIndex(${i})">📋 Paste Clipboard</button>
+                    </div>
+                 </div>`;
+                 
                 html += `
                 <div class="img-card">
-                    <img src="${img.dataUrl}" class="img-thumb">
+                    ${imgEl}
                     <div class="img-details">
                         <select id="imgPre_${i}" style="width:100%;">${opts}</select>
                         <textarea id="imgDet_${i}" placeholder="Specific details (multi-line)..." style="width:100%; resize:vertical; padding:8px; font-size:13px; font-family:inherit; min-height:40px; border:1px solid var(--border); border-radius:4px; background:var(--card-bg); color:var(--text-main);" oninput="saveCurrentRowData()">${img.descDetails}</textarea>
@@ -1660,10 +2005,9 @@
         
         setTimeout(async () => {
             try {
-                let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN", "Image Count"]];
+                let exportData = [["Interface", "Failure Mode", "Effect of Failure", "Potential Causes of Failure", "Failure Mechanism", "S", "O", "D", "RPN"]];
                 workingTableData.forEach((r, idx) => {
-                    let imgCount = r.images ? r.images.length : 0;
-                    exportData.push([r.interface, r.mode, r.effect, r.cause, r.mechDetails || "", r.sev, r.occ, r.det, r.rpn, imgCount > 0 ? `${imgCount} attached` : ""]);
+                    exportData.push([r.interface, r.mode, r.effect, r.cause, r.mechDetails || "", r.sev, r.occ, r.det, r.rpn]);
                 });
 
                 // Generate Matrix Sheet
@@ -1691,7 +2035,7 @@
                 const wb = XLSX.utils.book_new(); 
                 
                 const ws = XLSX.utils.aoa_to_sheet(exportData); 
-                ws['!cols'] = [{wch:25},{wch:20},{wch:20},{wch:30},{wch:20},{wch:5},{wch:5},{wch:5},{wch:5},{wch:15}];
+                ws['!cols'] = [{wch:25},{wch:20},{wch:20},{wch:30},{wch:20},{wch:5},{wch:5},{wch:5},{wch:5}];
                 XLSX.utils.book_append_sheet(wb, ws, "DFMEA");
 
                 const wsMatrix = XLSX.utils.aoa_to_sheet(matrixData);
@@ -1846,13 +2190,13 @@
 
                 showLoading("Compiling Reference Images...", 50);
                 setTimeout(() => {
-                    // 3. Feature Details (Dimensions & Images) Pages
+                    // 3. Feature Details (Dimensions only, with link to Appendix for images)
                     if (hasFeatData) {
                         dComp.forEach(c => {
                             (dFeats[c]||[]).forEach(f => {
                                 let k = `${c}|${f}`;
                                 let dims = dDims[k] || [];
-                                let imgs = featImgs[k] || [];
+                                let imgs = (featImgs[k] || []).filter(img => img.dataUrl);
                                 
                                 if (dims.length > 0 || imgs.length > 0) {
                                     // Main anchor for this feature block
@@ -1865,42 +2209,13 @@
                                     }
 
                                     if (imgs.length > 0) {
-                                        imgs.forEach((img, imgIndex) => {
-                                            if (imgIndex > 0 || dims.length > 0) {
-                                                content.push({ text: '', pageBreak: 'before' });
-                                                content.push({ text: `${c} • ${f} (cont.)`, style: 'header', margin: [0, 0, 0, 15] });
-                                            }
-                                            
-                                            let preset = img.descPreset ? `Image Description: ${img.descPreset}` : "Image Description: None";
-                                            let details = img.descDetails ? `Details:\n${img.descDetails}` : "";
-                                            
-                                            content.push({ text: preset, style: 'subheader', margin: [0, 0, 0, 5] });
-                                            if (details) {
-                                                content.push({ text: details, style: 'caption', margin: [0, 0, 0, 15] });
-                                            } else {
-                                                content.push({ text: ' ', margin: [0, 0, 0, 15] });
-                                            }
-                                            
-                                            content.push({
-                                                columns: [
-                                                    { width: '*', text: '' },
-                                                    {
-                                                        width: 'auto',
-                                                        table: {
-                                                            widths: ['auto'],
-                                                            body: [[ { image: img.dataUrl, fit: [500, 550], margin: [0,0,0,0] } ]]
-                                                        },
-                                                        layout: {
-                                                            hLineWidth: function () { return 1; }, vLineWidth: function () { return 1; },
-                                                            hLineColor: function () { return 'black'; }, vLineColor: function () { return 'black'; },
-                                                            paddingLeft: function() { return 0; }, paddingRight: function() { return 0; },
-                                                            paddingTop: function() { return 0; }, paddingBottom: function() { return 0; }
-                                                        }
-                                                    },
-                                                    { width: '*', text: '' }
-                                                ],
-                                                margin: [0, 0, 0, 15]
-                                            });
+                                        content.push({ text: 'Reference Images', style: 'subheader', margin: [0, 0, 0, 5] });
+                                        content.push({
+                                            text: `This feature has ${imgs.length} reference image(s). Click to view in Appendix at the end of the document.`,
+                                            linkToDestination: `appendix_${k.replace(/[^a-zA-Z0-9]/g,'_')}`,
+                                            color: '#2563eb',
+                                            decoration: 'underline',
+                                            margin: [15, 0, 0, 15]
                                         });
                                     }
                                     content.push({ text: '', pageBreak: 'after' });
@@ -1963,8 +2278,9 @@
                                 }, margin: [0, 0, 0, 20]
                             });
 
-                            if (r.images && r.images.length > 0) {
-                                r.images.forEach((img) => {
+                            let validImgs = (r.images || []).filter(img => img.dataUrl);
+                            if (validImgs.length > 0) {
+                                validImgs.forEach((img) => {
                                     content.push({ text: '', pageBreak: 'before' });
                                     content.push({ text: `Attachment: Row ${r.oIndex + 1}`, style: 'header', margin: [0, 0, 0, 15] });
                                     
@@ -2003,7 +2319,81 @@
                             if (i < processRows.length - 1) content.push({ text: '', pageBreak: 'after' });
                         });
 
-                        // 5. End of Report
+                        // 5. Appendix: Component Feature Reference Images
+                        let hasAppImages = false;
+                        dComp.forEach(c => {
+                            (dFeats[c]||[]).forEach(f => {
+                                let k = `${c}|${f}`;
+                                let imgs = (featImgs[k] || []).filter(img => img.dataUrl);
+                                if (imgs.length > 0) hasAppImages = true;
+                            });
+                        });
+
+                        if (hasAppImages) {
+                            content.push({ text: '', pageBreak: 'before' });
+                            content.push({ text: 'Appendix: Feature Reference Images', style: 'header', margin: [0, 0, 0, 20] });
+                            
+                            let isFirstAppEntry = true;
+                            dComp.forEach(c => {
+                                (dFeats[c]||[]).forEach(f => {
+                                    let k = `${c}|${f}`;
+                                    let imgs = (featImgs[k] || []).filter(img => img.dataUrl);
+                                    if (imgs.length > 0) {
+                                        if (!isFirstAppEntry) {
+                                            content.push({ text: '', pageBreak: 'before' });
+                                        }
+                                        isFirstAppEntry = false;
+
+                                        content.push({ 
+                                            text: `${c} • ${f} - Reference Images`, 
+                                            style: 'subheader', 
+                                            margin: [0, 10, 0, 10], 
+                                            id: `appendix_${k.replace(/[^a-zA-Z0-9]/g,'_')}` 
+                                        });
+                                        
+                                        imgs.forEach((img, imgIndex) => {
+                                            if (imgIndex > 0) {
+                                                content.push({ text: '', pageBreak: 'before' });
+                                                content.push({ text: `${c} • ${f} - Reference Images (cont.)`, style: 'subheader', margin: [0, 10, 0, 10] });
+                                            }
+                                            
+                                            let preset = img.descPreset ? `Image Description: ${img.descPreset}` : "Image Description: None";
+                                            let details = img.descDetails ? `Details:\n${img.descDetails}` : "";
+                                            
+                                            content.push({ text: preset, style: 'subheader', margin: [0, 0, 0, 5] });
+                                            if (details) {
+                                                content.push({ text: details, style: 'caption', margin: [0, 0, 0, 15] });
+                                            } else {
+                                                content.push({ text: ' ', margin: [0, 0, 0, 15] });
+                                            }
+                                            
+                                            content.push({
+                                                columns: [
+                                                    { width: '*', text: '' },
+                                                    {
+                                                        width: 'auto',
+                                                        table: {
+                                                            widths: ['auto'],
+                                                            body: [[ { image: img.dataUrl, fit: [500, 550], margin: [0,0,0,0] } ]]
+                                                        },
+                                                        layout: {
+                                                            hLineWidth: function () { return 1; }, vLineWidth: function () { return 1; },
+                                                            hLineColor: function () { return 'black'; }, vLineColor: function () { return 'black'; },
+                                                            paddingLeft: function() { return 0; }, paddingRight: function() { return 0; },
+                                                            paddingTop: function() { return 0; }, paddingBottom: function() { return 0; }
+                                                        }
+                                                    },
+                                                    { width: '*', text: '' }
+                                                ],
+                                                margin: [0, 0, 0, 15]
+                                            });
+                                        });
+                                    }
+                                });
+                            });
+                        }
+
+                        // 6. End of Report
                         content.push({ text: '', pageBreak: 'before' });
                         content.push({ text: 'End of Report', style: 'coverTitle', alignment: 'center', margin: [0, 350, 0, 20] });
 
