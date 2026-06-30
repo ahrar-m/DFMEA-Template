@@ -1,49 +1,38 @@
-# DFMEA Generator Helper
+# AIAG-VDA DFMEA Helper
 
-A browser-based tool designed to help engineers build Design Failure Mode and Effects Analysis (DFMEA) tables, interactively score risks using industry-standard criteria, attach reference images, and export directly to Excel or a paginated PDF report. 
+A browser-based standalone tool designed to help engineers perform Design Failure Mode and Effects Analysis (DFMEA) using the official **AIAG-VDA 7-Step FMEA methodology**.
 
-This tool works entirely offline on your local machine, ensuring all your proprietary data remains 100% secure.
+This tool operates completely offline on your local machine, ensuring all proprietary engineering data remains 100% secure.
+
+---
+
+## 🚀 The 7-Step FMEA Methodology
+
+The tool guides you step-by-step through the seven phases defined by the AIAG-VDA FMEA Handbook:
+
+### 1. Planning & Preparation
+Define the project scope, boundaries, and headers (such as design responsibility, key dates, and system boundaries).
+
+### 2. Structure Analysis
+Deconstruct the design into physical structure elements: Next Higher Level (System), Focus Element (Subsystem), and Next Lower Level (Component or Interface).
+
+### 3. Function Analysis
+Establish the functions, requirements, and specifications for each defined structure element.
+
+### 4. Failure Analysis
+Map failure chains: link Failure Effects (at the Next Higher Level), Failure Modes (at the Focus Element), and Failure Causes (at the Next Lower Level).
+
+### 5. Risk Analysis
+Evaluate current prevention and detection controls. Assign Severity (S), Occurrence (O), and Detection (D) ratings to calculate the Action Priority (AP) (High, Medium, Low).
+
+### 6. Optimization
+Formulate recommendations and action plans to reduce risks. Track action status, responsibilities, target completion dates, and re-evaluate S, O, D and AP.
+
+### 7. Results Documentation
+Compile, summarize, and export the FMEA results. Generate final report summaries and documentation.
 
 ---
 
 ## 📥 Installation & Setup
-1. **Download:** Click the green **`<> Code`** button at the top of this repository and select **Download ZIP**.
-2. **Extract:** Extract the downloaded ZIP file to a folder on your computer.
-3. **Run:** Open the extracted folder and double-click `DFMEA Helper.html` to open it in Chrome, Edge, Firefox, or Safari. 
-
----
-
-## 🛠️ Step-by-Step Guide
-
-### 1. Components
-List all the physical parts in your assembly. You can type multiple parts separated by commas and press **Enter** to add them all at once.
-
-### 2. Features
-List the specific physical traits of each part you just added (e.g., *mounting holes, side walls, retaining clips*).
-
-### 3. Dimensions & Feature Images
-* **Dimensions:** Add measurable dimensions for your features (e.g., *diameter, depth, thickness*). 
-* **Visual References & Placeholders:** Add placeholder slots or upload/paste (`Ctrl+V` or one-click `Paste Clipboard`) reference photos for component features. These guide you while scoring and will be compiled into the report.
-* *Note: You can jump directly to any component using the Index at the top of the page.*
-
-### 4. Interfaces Matrix
-A grid maps every feature against every other feature. Toggle checkboxes to define physical interactions. You can use bulk row/column toggles (☑) to select or deselect entire features at once.
-* **Matrix Comments:** Click the `💬` button on any intersection cell to add/edit inline design comments. Cells with comments feature an orange corner dogear indicator. Hovering over a cell displays the comment text in a styled HTML tooltip. Comments cascade automatically during component/feature renames, serialize with the JSON session, and export directly as cell comments in the Excel worksheet.
-
-### 5. Settings & Presets
-* **Manage Dimension Presets:** Define how your dimensions fail (e.g., *too high/too low* or single extremes like *too large*).
-* **Dropdown Presets:** Quickly add dropdown options for Failure Modes, Failure Effects, and Image Descriptions.
-* **Cascading Renames:** Edit/rename any preset (including extreme dimension presets) to automatically cascade and update all linked feature dimensions, generated cause texts, and image descriptions session-wide.
-* **Save/Load & Cleanup:** Save/load sessions as `.json` files. The tool automatically performs database garbage collection to clean up orphaned entries from deleted features or components.
-
-### 6. Generate & Populate
-* **Form View:** Step through every generated cause. Visual context (Feature Reference Images) is shown as you score.
-* **Navigation:** Skip directly to incomplete rows using the **Skip to Next Unfilled** search button, or use the **Prev/Next Dimension** (⏮/⏭) and **Prev/Next Configuration** (◀/▶) buttons to jump between dimensions and extreme configurations.
-* **Feedback Animations:** Smooth visual flash highlights pulse the Interface/Cause box and container card upon navigation to visually confirm row changes.
-* **Scoring:** Select Failure Modes and Effects from presets and assign S, O, D values. RPN is calculated automatically.
-* **Attach Row Images:** Paste/upload reference images directly into specific rows with multi-line captions and clean zoom-clamped previews, or quickly select existing reference images from your feature library.
-* **Reference Image De-duplication:** Duplicate reference images under the "Reference Images for this Interface" section are automatically filtered out, ensuring a clean, uncluttered interface.
-* **Export:** Export directly to a clean 9-column Excel spreadsheet. If 0 rows are filled, you can export a skeleton sheet containing all checked interfaces and dimensions.
-
-### 7. PDF Report
-Upload the `.json` session file. The tool compiles a professional, paginated PDF report complete with a clickable Table of Contents, page-break layouts, interface comments/notes (matrix comments are integrated as dedicated context notes under respective failure lines), and reference images consolidated into an Appendix at the end with dynamic back-links.
+1. **Clone/Download:** Clone this repository or download the ZIP file.
+2. **Run:** Simply double-click `DFMEA Helper.html` in any modern web browser (Chrome, Edge, Firefox, or Safari). No installation or internet connection required.
