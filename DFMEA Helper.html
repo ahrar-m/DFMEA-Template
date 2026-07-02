@@ -871,6 +871,92 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         renderInterfaceMatrix();
     }
 
+    // Inline editing states
+    let editingComponentId = null;
+    let editingSubcomponentId = null;
+
+    function startEditComponent(compId) {
+        editingComponentId = compId;
+        editingSubcomponentId = null;
+        renderStructureTree();
+    }
+
+    function cancelEditComponent() {
+        editingComponentId = null;
+        renderStructureTree();
+    }
+
+    function saveEditComponent(compId) {
+        const input = document.getElementById('editCompInput-' + compId);
+        const newName = input.value.trim();
+        if (!newName) return;
+
+        const comp = structureData.components.find(c => c.id === compId);
+        if (comp) {
+            comp.name = newName;
+        }
+
+        editingComponentId = null;
+        renderStructureTree();
+        renderInterfaceMatrix();
+    }
+
+    function startEditSubcomponent(subId) {
+        editingSubcomponentId = subId;
+        editingComponentId = null;
+        renderStructureTree();
+    }
+
+    function cancelEditSubcomponent() {
+        editingSubcomponentId = null;
+        renderStructureTree();
+    }
+
+    function saveEditSubcomponent(compId, subId) {
+        const input = document.getElementById('editSubInput-' + subId);
+        const newName = input.value.trim();
+        if (!newName) return;
+
+        const comp = structureData.components.find(c => c.id === compId);
+        if (comp) {
+            const sub = comp.subcomponents.find(s => s.id === subId);
+            if (sub) {
+                sub.name = newName;
+            }
+        }
+
+        editingSubcomponentId = null;
+        renderStructureTree();
+        renderInterfaceMatrix();
+    }
+
+    function moveComponent(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= structureData.components.length) return;
+
+        const temp = structureData.components[index];
+        structureData.components[index] = structureData.components[newIndex];
+        structureData.components[newIndex] = temp;
+
+        renderStructureTree();
+        renderInterfaceMatrix();
+    }
+
+    function moveSubcomponent(compId, index, direction) {
+        const comp = structureData.components.find(c => c.id === compId);
+        if (!comp) return;
+
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= comp.subcomponents.length) return;
+
+        const temp = comp.subcomponents[index];
+        comp.subcomponents[index] = comp.subcomponents[newIndex];
+        comp.subcomponents[newIndex] = temp;
+
+        renderStructureTree();
+        renderInterfaceMatrix();
+    }
+
     function renderStructureTree() {
         const container = document.getElementById('structureTreeContainer');
         if (structureData.components.length === 0) {
@@ -879,28 +965,62 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         }
 
         let html = '';
-        structureData.components.forEach(comp => {
+        structureData.components.forEach((comp, compIndex) => {
             html += `
             <div class="tree-component-card">
+            `;
+
+            if (comp.id === editingComponentId) {
+                html += `
+                <div class="tree-header" style="gap: 5px;">
+                    <input type="text" id="editCompInput-${comp.id}" value="${escapeHtml(comp.name)}" style="flex: 1; font-size: 13px; padding: 4px 8px;">
+                    <button class="btn-success" onclick="saveEditComponent('${comp.id}')" style="padding: 4px 8px; font-size: 11px;">💾</button>
+                    <button class="btn-outline" onclick="cancelEditComponent()" style="padding: 4px 8px; font-size: 11px; border-color: var(--border); width: auto;">✕</button>
+                </div>
+                `;
+            } else {
+                html += `
                 <div class="tree-header">
                     <span class="tree-title">📦 ${escapeHtml(comp.name)}</span>
-                    <button class="btn-danger" onclick="deleteStructureComponent('${comp.id}')" style="padding: 4px 8px; font-size: 11px;">Delete</button>
+                    <div class="action-buttons" style="display: flex; gap: 4px;">
+                        <button class="btn-outline" onclick="moveComponent(${compIndex}, -1)" ${compIndex === 0 ? 'disabled' : ''} style="padding: 3px 6px; font-size: 11px; width: auto;" title="Move Up">▲</button>
+                        <button class="btn-outline" onclick="moveComponent(${compIndex}, 1)" ${compIndex === structureData.components.length - 1 ? 'disabled' : ''} style="padding: 3px 6px; font-size: 11px; width: auto;" title="Move Down">▼</button>
+                        <button class="btn-info" onclick="startEditComponent('${comp.id}')" style="padding: 3px 6px; font-size: 11px; width: auto;" title="Rename">✏️</button>
+                        <button class="btn-danger" onclick="deleteStructureComponent('${comp.id}')" style="padding: 3px 6px; font-size: 11px; width: auto;" title="Delete">🗑️</button>
+                    </div>
                 </div>
+                `;
+            }
+
+            html += `
                 <div class="subcomp-list">
             `;
 
             if (comp.subcomponents.length === 0) {
                 html += `<div style="font-size: 12px; color: var(--text-muted); font-style: italic; margin-bottom: 10px; padding-left: 5px;">No subcomponents/features defined.</div>`;
             } else {
-                comp.subcomponents.forEach(sub => {
-                    html += `
-                    <div class="subcomp-item">
-                        <span>🔹 ${escapeHtml(sub.name)}</span>
-                        <div class="subcomp-actions">
-                            <button class="btn-danger" onclick="deleteStructureSubcomponent('${comp.id}', '${sub.id}')" style="padding: 2px 6px; font-size: 10px;">&times;</button>
+                comp.subcomponents.forEach((sub, subIndex) => {
+                    if (sub.id === editingSubcomponentId) {
+                        html += `
+                        <div class="subcomp-item" style="gap: 5px; padding: 4px 10px;">
+                            <input type="text" id="editSubInput-${sub.id}" value="${escapeHtml(sub.name)}" style="flex: 1; font-size: 12px; padding: 2px 6px; background: var(--bg); color: var(--text-main); border: 1px solid var(--border);">
+                            <button class="btn-success" onclick="saveEditSubcomponent('${comp.id}', '${sub.id}')" style="padding: 2px 6px; font-size: 10px;">💾</button>
+                            <button class="btn-outline" onclick="cancelEditSubcomponent()" style="padding: 2px 6px; font-size: 10px; border-color: var(--border); width: auto;">✕</button>
                         </div>
-                    </div>
-                    `;
+                        `;
+                    } else {
+                        html += `
+                        <div class="subcomp-item">
+                            <span>🔹 ${escapeHtml(sub.name)}</span>
+                            <div class="subcomp-actions" style="display: flex; gap: 4px;">
+                                <button class="btn-outline" onclick="moveSubcomponent('${comp.id}', ${subIndex}, -1)" ${subIndex === 0 ? 'disabled' : ''} style="padding: 2px 5px; font-size: 9px; width: auto;" title="Move Up">▲</button>
+                                <button class="btn-outline" onclick="moveSubcomponent('${comp.id}', ${subIndex}, 1)" ${subIndex === comp.subcomponents.length - 1 ? 'disabled' : ''} style="padding: 2px 5px; font-size: 9px; width: auto;" title="Move Down">▼</button>
+                                <button class="btn-info" onclick="startEditSubcomponent('${sub.id}')" style="padding: 2px 5px; font-size: 9px; width: auto;" title="Rename">✏️</button>
+                                <button class="btn-danger" onclick="deleteStructureSubcomponent('${comp.id}', '${sub.id}')" style="padding: 2px 5px; font-size: 9px; width: auto;" title="Delete">&times;</button>
+                            </div>
+                        </div>
+                        `;
+                    }
                 });
             }
 
@@ -915,9 +1035,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         });
 
         container.innerHTML = html;
-    }
-
-    function renderInterfaceMatrix() {
+    }\n\n    function renderInterfaceMatrix() {
         const container = document.getElementById('interfaceMatrixContainer');
         
         // Flatten all subcomponents
