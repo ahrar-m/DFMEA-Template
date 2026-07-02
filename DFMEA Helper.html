@@ -553,10 +553,99 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         }
 
         /* Step 2: Structure Analysis styling */
-        .step2-layout { display: flex; gap: 30px; flex-wrap: wrap; margin-top: 20px; }
-        .step2-left { flex: 1 1 300px; min-width: 280px; }
-        .step2-middle { flex: 2 2 400px; min-width: 350px; }
-        .step2-right { flex: 2 2 500px; min-width: 380px; }
+        .step2-layout { display: flex; flex-direction: column; gap: 45px; margin-top: 20px; }
+        .step2-left, .step2-middle, .step2-right { width: 100%; }
+        
+        .tree-component-card {
+            background: var(--highlight-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: border-color 0.2s;
+        }
+        .tree-component-card:hover {
+            border-color: var(--primary);
+        }
+        .tree-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+        }
+        .tree-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        .subcomp-list {
+            padding-left: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .subcomp-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .subcomp-item:hover {
+            border-left-color: var(--primary-hover);
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .subcomp-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .subcomp-actions button {
+            padding: 4px 8px;
+            font-size: 12px;
+            height: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .subcomp-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-left: 15px;
+        }
+        .subcomp-input-group input {
+            flex: 1;
+            font-size: 13px;
+            padding: 8px 12px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: border-color 0.2s;
+        }
+        .subcomp-input-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        .subcomp-input-group button {
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 6px;
+        }
 
         /* PEIM Matrix Cell styles */
         .peim-cell-container {
