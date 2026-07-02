@@ -840,8 +840,8 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         const comp2 = structureData.components.find(c => c.id === compId2);
         if (!comp1 || !comp2) return;
 
-        const subIds1 = comp1.subcomponents.length === 0 ? [comp1.id] : comp1.subcomponents.map(s => s.id);
-        const subIds2 = comp2.subcomponents.length === 0 ? [comp2.id] : comp2.subcomponents.map(s => s.id);
+        const subIds1 = [comp1.id, ...comp1.subcomponents.map(s => s.id)];
+        const subIds2 = [comp2.id, ...comp2.subcomponents.map(s => s.id)];
 
         subIds1.forEach(id1 => {
             subIds2.forEach(id2 => {
@@ -1073,28 +1073,27 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
     function renderInterfaceMatrix() {
         const container = document.getElementById('interfaceMatrixContainer');
         
-        // Flatten all subcomponents/featureless components
+        // Flatten all components and their subcomponents
         const allFeatures = [];
         structureData.components.forEach(c => {
-            if (c.subcomponents.length === 0) {
+            // First, always add the parent component itself
+            allFeatures.push({
+                id: c.id,
+                name: c.name,
+                compId: c.id,
+                compName: c.name,
+                isComponentOnly: true
+            });
+            // Then, add its subcomponents/features (if any)
+            c.subcomponents.forEach(s => {
                 allFeatures.push({
-                    id: c.id,
-                    name: c.name,
+                    id: s.id,
+                    name: s.name,
                     compId: c.id,
                     compName: c.name,
-                    isComponentOnly: true
+                    isComponentOnly: false
                 });
-            } else {
-                c.subcomponents.forEach(s => {
-                    allFeatures.push({
-                        id: s.id,
-                        name: s.name,
-                        compId: c.id,
-                        compName: c.name,
-                        isComponentOnly: false
-                    });
-                });
-            }
+            });
         });
 
         if (allFeatures.length < 2) {
