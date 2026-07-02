@@ -1282,13 +1282,19 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         // Header row
         html += '<thead><tr><th>Component</th>';
         comps.forEach(comp => {
-            html += `<th title="${escapeHtml(comp.name)}">📦 ${escapeHtml(comp.name)}</th>`;
+            const tooltip = comp.subcomponents.length === 0 
+                ? "No subcomponents/features (Component Only)" 
+                : "Features:\n" + comp.subcomponents.map(s => "• " + s.name).join("\n");
+            html += `<th title="${escapeHtml(tooltip)}">📦 ${escapeHtml(comp.name)}</th>`;
         });
         html += '</tr></thead><tbody>';
 
         // Table body rows
         comps.forEach((rowComp, i) => {
-            html += `<tr><td><strong>📦 ${escapeHtml(rowComp.name)}</strong></td>`;
+            const tooltip = rowComp.subcomponents.length === 0 
+                ? "No subcomponents/features (Component Only)" 
+                : "Features:\n" + rowComp.subcomponents.map(s => "• " + s.name).join("\n");
+            html += `<tr><td title="${escapeHtml(tooltip)}"><strong>📦 ${escapeHtml(rowComp.name)}</strong></td>`;
             
             comps.forEach((colComp, j) => {
                 if (i === j) {
