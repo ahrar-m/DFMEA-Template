@@ -804,6 +804,14 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
                 </div>
             </div>
         </div>
+        
+        <div class="step2-middle" style="margin-top: 35px; border-top: 2px solid var(--border); padding-top: 25px;">
+            <h3>3. Exploded View & Component Reference Diagram</h3>
+            <span class="hint">Upload or paste an image (e.g. system layout, exploded assembly drawing, boundary diagram) to reference during structure and interface analysis.</span>
+            <div id="step2ImageContainer" style="margin-top: 20px;">
+                <!-- Exploded view diagram upload or display -->
+            </div>
+        </div>
     </div>
 
     <div id="tab3" class="tab-content">
@@ -881,6 +889,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         if (tabIndex === 2) {
             renderStructureTree();
             renderComponentInteractions();
+            renderStep2Image();
         }
     }
 
@@ -911,6 +920,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
                 alert("Session loaded successfully!");
                 renderStructureTree();
                 renderComponentInteractions();
+                renderStep2Image();
             } catch (err) {
                 alert("Error parsing JSON session file: " + err.message);
             }
@@ -1248,6 +1258,122 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         container.innerHTML = html;
     }
 
+    // --- Exploded View & Reference Diagram JS logic ---
+    function processImageFile(fileOrBlob, callback) {
+        if (fileOrBlob.type === 'image/jpeg' || fileOrBlob.type === 'image/png' || fileOrBlob.type === 'image/gif' || fileOrBlob.type === 'image/webp') {
+            let reader = new FileReader();
+            reader.onload = function(event) { callback(event.target.result); };
+            reader.readAsDataURL(fileOrBlob);
+            return;
+        }
+
+        let reader = new FileReader();
+        reader.onload = function(event) { 
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                let ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                callback(canvas.toDataURL('image/png')); 
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(fileOrBlob);
+    }
+
+    function handleStep2ImageUpload(e) {
+        let file = e.target.files[0]; 
+        if(!file) return; 
+        processImageFile(file, (dataUrl) => { 
+            if (!structureData.explodedView) {
+                structureData.explodedView = { dataUrl: "", caption: "" };
+            }
+            structureData.explodedView.dataUrl = dataUrl;
+            renderStep2Image();
+            document.getElementById('step2ImageInput').value = ''; 
+        });
+    }
+
+    function removeStep2Image() {
+        if (!confirm("Are you sure you want to delete this reference diagram?")) return;
+        delete structureData.explodedView;
+        renderStep2Image();
+    }
+
+    function saveStep2ImageCaption() {
+        const textarea = document.getElementById('step2ImageCaption');
+        if (textarea && structureData.explodedView) {
+            structureData.explodedView.caption = textarea.value;
+        }
+    }
+
+    function openImageInNewTab(dataUrl) {
+        const w = window.open();
+        w.document.write(`<img src="${dataUrl}" style="max-width:100%; max-height:100%;">`);
+    }
+
+    function renderStep2Image() {
+        const container = document.getElementById('step2ImageContainer');
+        if (!container) return;
+
+        if (!structureData.explodedView || !structureData.explodedView.dataUrl) {
+            container.innerHTML = `
+            <div class="paste-zone" id="step2PasteZone" tabindex="0" onclick="document.getElementById('step2ImageInput').click()" style="padding: 30px; text-align: center; border: 2px dashed var(--border); border-radius: 8px; cursor: pointer; background: var(--highlight-bg); transition: border-color 0.2s;">
+                <div style="font-size: 28px; margin-bottom: 12px;">🖼️</div>
+                <div style="font-weight: 600; color: var(--text-heading); font-size: 14px; margin-bottom: 6px;">Click here to upload an image</div>
+                <div style="color: var(--text-muted); font-size: 12px;">Or select this box and press <strong>Ctrl+V</strong> to paste from clipboard</div>
+            </div>
+            <input type="file" id="step2ImageInput" accept="image/*" style="display:none" onchange="handleStep2ImageUpload(event)">
+            `;
+            
+            // Add focus outline and paste handler for keyboard focus
+            const zone = document.getElementById('step2PasteZone');
+            if (zone) {
+                zone.addEventListener('focus', () => zone.style.borderColor = 'var(--primary)');
+                zone.addEventListener('blur', () => zone.style.borderColor = 'var(--border)');
+            }
+        } else {
+            container.innerHTML = `
+            <div class="img-card" style="border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: var(--highlight-bg); max-width: 650px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); display: flex; justify-content: center; align-items: center; max-height: 400px; margin-bottom: 12px;">
+                    <div style="position: absolute; top: 8px; right: 8px; z-index: 10; display: flex; gap: 8px;">
+                        <button onclick="openImageInNewTab(structureData.explodedView.dataUrl)" class="btn-outline" style="padding: 4px 8px; font-size: 11px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 4px; width: auto;" title="Open in New Tab">↗ Open</button>
+                        <button onclick="removeStep2Image()" class="btn-danger" style="padding: 4px 8px; font-size: 11px; width: auto;" title="Remove Image">✕ Delete</button>
+                    </div>
+                    <img src="${structureData.explodedView.dataUrl}" style="max-width: 100%; max-height: 380px; object-fit: contain;">
+                </div>
+                <div>
+                    <textarea id="step2ImageCaption" placeholder="Add an image description or caption (e.g. Exploded system view showing assembly interfaces)..." style="width: 100%; resize: vertical; padding: 10px; font-size: 13px; font-family: inherit; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); color: var(--text-main); min-height: 60px;" oninput="saveStep2ImageCaption()">${escapeHtml(structureData.explodedView.caption || '')}</textarea>
+                </div>
+            </div>
+            `;
+        }
+    }
+
+    // Global Paste Listener for Step 2 Exploded View
+    document.addEventListener("paste", function(e) {
+        const tab2 = document.getElementById('tab2');
+        if (tab2 && tab2.classList.contains('active')) {
+            let items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") !== -1) {
+                    let blob = items[i].getAsFile(); 
+                    processImageFile(blob, (dataUrl) => { 
+                        if (!structureData.explodedView) {
+                            structureData.explodedView = { dataUrl: "", caption: "" };
+                        }
+                        structureData.explodedView.dataUrl = dataUrl;
+                        renderStep2Image();
+                    });
+                    e.preventDefault();
+                    break;
+                }
+            }
+        }
+    });
+
+
     // Helper to escape HTML characters
     function escapeHtml(str) {
         if (!str) return '';
@@ -1270,6 +1396,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         // Initial Step 2 render
         renderStructureTree();
         renderComponentInteractions();
+        renderStep2Image();
     });
 </script>
 </body>
