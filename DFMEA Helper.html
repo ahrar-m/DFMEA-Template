@@ -584,7 +584,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <button onclick="exportSession()" class="btn-info" style="font-size: 13px; padding: 6px 12px; width: auto;">💾 Save Session</button>
             <button onclick="document.getElementById('importFileGlobal').click()" class="btn-warning" style="font-size: 13px; padding: 6px 12px; width: auto;">📂 Load Session</button>
-            <input type="file" id="importFileGlobal" accept=".json" style="display:none;" onchange="importSession(event)">
+            <input type="file" id="importFileGlobal" accept="application/json,.json" style="display:none;" onchange="importSession(event)">
             <button onclick="toggleTheme()" class="btn-outline" id="themeBtn" style="font-size: 13px; padding: 6px 12px; width: auto;">☀️ Light Mode</button>
             <button onclick="toggleWidth()" class="btn-outline" id="widthBtn" style="font-size: 13px; padding: 6px 12px; width: auto;">↔ Expand Width</button>
         </div>
@@ -1035,7 +1035,9 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         });
 
         container.innerHTML = html;
-    }\n\n    function renderInterfaceMatrix() {
+    }
+
+    function renderInterfaceMatrix() {
         const container = document.getElementById('interfaceMatrixContainer');
         
         // Flatten all subcomponents
@@ -1122,4 +1124,6 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         renderStructureTree();
         renderInterfaceMatrix();
     });
-</script>\n</body>\n</html>
+</script>
+</body>
+</html>
