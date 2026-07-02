@@ -1204,18 +1204,18 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         html += '<thead><tr><th>Component</th>';
         comps.forEach(comp => {
             const subTitle = comp.subcomponents.length === 0 
-                ? "Component Only" 
-                : comp.subcomponents.map(s => s.name).join(", ");
-            html += `<th title="${escapeHtml(comp.name)} - Features: ${escapeHtml(subTitle)}">📦 ${escapeHtml(comp.name)}<br><span style="font-weight: normal; font-size: 11px; color: var(--text-muted);">${escapeHtml(subTitle)}</span></th>`;
+                ? "No features defined (Component Only)" 
+                : comp.subcomponents.map(s => "• " + s.name).join("\n");
+            html += `<th title="${escapeHtml(comp.name)} - Features:\n${escapeHtml(subTitle)}">📦 ${escapeHtml(comp.name)}</th>`;
         });
         html += '</tr></thead><tbody>';
 
         // Table body rows
         comps.forEach((rowComp, i) => {
             const subTitle = rowComp.subcomponents.length === 0 
-                ? "Component Only" 
-                : rowComp.subcomponents.map(s => s.name).join(", ");
-            html += `<tr><td><strong>📦 ${escapeHtml(rowComp.name)}</strong><br><span style="font-weight: normal; font-size: 11px; color: var(--text-muted);">${escapeHtml(subTitle)}</span></td>`;
+                ? "No features defined (Component Only)" 
+                : rowComp.subcomponents.map(s => "• " + s.name).join("\n");
+            html += `<tr><td title="${escapeHtml(rowComp.name)} - Features:\n${escapeHtml(subTitle)}"><strong>📦 ${escapeHtml(rowComp.name)}</strong></td>`;
             
             comps.forEach((colComp, j) => {
                 if (i === j) {
