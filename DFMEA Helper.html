@@ -856,6 +856,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
     function togglePeim(subId1, subId2, type) {
         const key1 = subId1 + '-' + subId2;
         const key2 = subId2 + '-' + subId1;
+        const lowercaseType = type.toLowerCase();
 
         if (!structureData.matrix[key1]) {
             structureData.matrix[key1] = { p: false, e: false, i: false, m: false };
@@ -864,9 +865,9 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
             structureData.matrix[key2] = { p: false, e: false, i: false, m: false };
         }
 
-        const val = !structureData.matrix[key1][type];
-        structureData.matrix[key1][type] = val;
-        structureData.matrix[key2][type] = val;
+        const val = !structureData.matrix[key1][lowercaseType];
+        structureData.matrix[key1][lowercaseType] = val;
+        structureData.matrix[key2][lowercaseType] = val;
 
         renderInterfaceMatrix();
     }
@@ -1047,6 +1048,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
                 allFeatures.push({
                     id: s.id,
                     name: s.name,
+                    compId: c.id,
                     compName: c.name
                 });
             });
@@ -1071,8 +1073,8 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
             html += `<tr><td><strong>${escapeHtml(rowFeat.compName)} - ${escapeHtml(rowFeat.name)}</strong></td>`;
             
             allFeatures.forEach((colFeat, j) => {
-                if (i === j) {
-                    html += '<td class="diagonal"></td>';
+                if (i === j || rowFeat.compId === colFeat.compId) {
+                    html += '<td class="diagonal" title="Same Component Blocked"></td>';
                 } else {
                     const key = rowFeat.id + '-' + colFeat.id;
                     const cellData = structureData.matrix[key] || { p: false, e: false, i: false, m: false };
