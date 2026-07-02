@@ -554,7 +554,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
 
         /* Step 2: Structure Analysis styling */
         .step2-layout { display: flex; flex-direction: column; gap: 45px; margin-top: 20px; }
-        .step2-left, .step2-middle, .step2-right { width: 100%; }
+        .step2-left, .step2-middle { width: 100%; }
         
         .tree-component-card {
             background: var(--highlight-bg);
@@ -786,21 +786,11 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
                 </div>
             </div>
 
-                        <div class="step2-middle">
-                <h3>2. Component Interactions</h3>
-                <span class="hint">Select which parent components physically or functionally interact with each other. This unblocks their features in the Interface Matrix.</span>
-                <div class="table-responsive" style="margin-top: 10px;">
-                    <div id="componentInteractionsContainer" class="matrix-wrapper">
-                        <!-- Component interaction matrix will be rendered here -->
-                    </div>
-                </div>
-            </div>
-
-            <div class="step2-right">
-                <h3>3. Interface Matrix</h3>
-                <span class="hint">Define interactions between elements (features or featureless components) in the matrix. Toggle P, E, I, M checkboxes for each unblocked cell.</span>
+            <div class="step2-middle">
+                <h3>2. Component Interfaces Matrix</h3>
+                <span class="hint">Define physical, energy, information, and material interfaces between components. Toggle P, E, I, M checkboxes for each cell.</span>
                 
-                <div class="peim-legend">
+                <div class="peim-legend" style="margin-top: 15px;">
                     <div class="peim-legend-item"><span class="peim-dot p-dot"></span> <strong>P</strong>hysical</div>
                     <div class="peim-legend-item"><span class="peim-dot e-dot"></span> <strong>E</strong>nergy</div>
                     <div class="peim-legend-item"><span class="peim-dot i-dot"></span> <strong>I</strong>nformation</div>
@@ -808,8 +798,8 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
                 </div>
 
                 <div class="table-responsive" style="margin-top: 10px;">
-                    <div id="interfaceMatrixContainer" class="matrix-wrapper">
-                        <!-- Matrix grid will be rendered here -->
+                    <div id="componentInteractionsContainer" class="matrix-wrapper">
+                        <!-- Component interaction matrix will be rendered here -->
                     </div>
                 </div>
             </div>
@@ -863,8 +853,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
     // Structure Analysis state
     let structureData = {
         components: [],
-        matrix: {},
-        componentInteractions: {}
+        matrix: {}
     };
 
     // Inline editing states
@@ -892,7 +881,6 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         if (tabIndex === 2) {
             renderStructureTree();
             renderComponentInteractions();
-            renderInterfaceMatrix();
         }
     }
 
@@ -919,14 +907,10 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
                 fmeaSession = { ...fmeaSession, ...parsed };
                 if (fmeaSession.step2) {
                     structureData = fmeaSession.step2;
-                    if (!structureData.componentInteractions) {
-                        structureData.componentInteractions = {};
-                    }
                 }
                 alert("Session loaded successfully!");
                 renderStructureTree();
                 renderComponentInteractions();
-                renderInterfaceMatrix();
             } catch (err) {
                 alert("Error parsing JSON session file: " + err.message);
             }
@@ -974,32 +958,21 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         input.value = '';
         renderStructureTree();
         renderComponentInteractions();
-        renderInterfaceMatrix();
     }
 
     function deleteStructureComponent(compId) {
         if (!confirm("Are you sure you want to delete this component?")) return;
         
-        // Find component to clean up its subcomponents from matrix
-        const comp = structureData.components.find(c => c.id === compId);
-        if (comp) {
-            comp.subcomponents.forEach(s => cleanMatrixForSubcomponent(s.id));
-            cleanMatrixForSubcomponent(comp.id); // also clean if featureless component
-        }
-
-        // Clean up parent level interactions
-        if (structureData.componentInteractions) {
-            Object.keys(structureData.componentInteractions).forEach(key => {
-                if (key.includes(compId)) {
-                    delete structureData.componentInteractions[key];
-                }
-            });
-        }
+        // Clean up all matrix keys containing this component ID
+        Object.keys(structureData.matrix).forEach(key => {
+            if (key.includes(compId)) {
+                delete structureData.matrix[key];
+            }
+        });
 
         structureData.components = structureData.components.filter(c => c.id !== compId);
         renderStructureTree();
         renderComponentInteractions();
-        renderInterfaceMatrix();
     }
 
     function addStructureSubcomponent(compId) {
@@ -1022,7 +995,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
 
         input.value = '';
         renderStructureTree();
-        renderInterfaceMatrix();
+        renderComponentInteractions();
     }
 
     function deleteStructureSubcomponent(compId, subId) {
@@ -1032,59 +1005,13 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         if (!comp) return;
 
         comp.subcomponents = comp.subcomponents.filter(s => s.id !== subId);
-        cleanMatrixForSubcomponent(subId);
         renderStructureTree();
-        renderInterfaceMatrix();
+        renderComponentInteractions();
     }
 
-    function cleanMatrixForSubcomponent(subId) {
-        // Remove all matrix keys containing this subcomponent/component ID
-        Object.keys(structureData.matrix).forEach(key => {
-            if (key.includes(subId)) {
-                delete structureData.matrix[key];
-            }
-        });
-    }
-
-    function toggleComponentInteraction(compId1, compId2) {
+    function toggleComponentPeim(compId1, compId2, type) {
         const key1 = compId1 + '-' + compId2;
         const key2 = compId2 + '-' + compId1;
-        if (!structureData.componentInteractions) {
-            structureData.componentInteractions = {};
-        }
-
-        const val = !structureData.componentInteractions[key1];
-        structureData.componentInteractions[key1] = val;
-        structureData.componentInteractions[key2] = val;
-
-        // If interaction is disabled, clean up its matrix values
-        if (!val) {
-            cleanMatrixForDeletedComponentInteraction(compId1, compId2);
-        }
-
-        renderComponentInteractions();
-        renderInterfaceMatrix();
-    }
-
-    function cleanMatrixForDeletedComponentInteraction(compId1, compId2) {
-        const comp1 = structureData.components.find(c => c.id === compId1);
-        const comp2 = structureData.components.find(c => c.id === compId2);
-        if (!comp1 || !comp2) return;
-
-        const subIds1 = [comp1.id, ...comp1.subcomponents.map(s => s.id)];
-        const subIds2 = [comp2.id, ...comp2.subcomponents.map(s => s.id)];
-
-        subIds1.forEach(id1 => {
-            subIds2.forEach(id2 => {
-                delete structureData.matrix[id1 + '-' + id2];
-                delete structureData.matrix[id2 + '-' + id1];
-            });
-        });
-    }
-
-    function togglePeim(subId1, subId2, type) {
-        const key1 = subId1 + '-' + subId2;
-        const key2 = subId2 + '-' + subId1;
         const lowercaseType = type.toLowerCase();
 
         if (!structureData.matrix[key1]) {
@@ -1098,7 +1025,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         structureData.matrix[key1][lowercaseType] = val;
         structureData.matrix[key2][lowercaseType] = val;
 
-        renderInterfaceMatrix();
+        renderComponentInteractions();
     }
 
     function startEditComponent(compId) {
@@ -1125,7 +1052,6 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         editingComponentId = null;
         renderStructureTree();
         renderComponentInteractions();
-        renderInterfaceMatrix();
     }
 
     function startEditSubcomponent(subId) {
@@ -1154,7 +1080,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
 
         editingSubcomponentId = null;
         renderStructureTree();
-        renderInterfaceMatrix();
+        renderComponentInteractions();
     }
 
     function moveComponent(index, direction) {
@@ -1167,7 +1093,6 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
 
         renderStructureTree();
         renderComponentInteractions();
-        renderInterfaceMatrix();
     }
 
     function moveSubcomponent(compId, index, direction) {
@@ -1182,7 +1107,7 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         comp.subcomponents[newIndex] = temp;
 
         renderStructureTree();
-        renderInterfaceMatrix();
+        renderComponentInteractions();
     }
 
     function renderStructureTree() {
@@ -1267,13 +1192,9 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
 
     function renderComponentInteractions() {
         const container = document.getElementById('componentInteractionsContainer');
-        if (!structureData.componentInteractions) {
-            structureData.componentInteractions = {};
-        }
-
         const comps = structureData.components;
         if (comps.length < 2) {
-            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px; border: 1px dashed var(--border); border-radius: 6px; font-size: 13px;">Add at least two components in the Structure Tree to define parent-level interactions.</div>`;
+            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px; border: 1px dashed var(--border); border-radius: 6px; font-size: 13px;">Add at least two components in the Structure Tree to view the Component Interfaces Matrix.</div>`;
             return;
         }
 
@@ -1282,125 +1203,41 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         // Header row
         html += '<thead><tr><th>Component</th>';
         comps.forEach(comp => {
-            const tooltip = comp.subcomponents.length === 0 
-                ? "No subcomponents/features (Component Only)" 
-                : "Features:\n" + comp.subcomponents.map(s => "• " + s.name).join("\n");
-            html += `<th title="${escapeHtml(tooltip)}">📦 ${escapeHtml(comp.name)}</th>`;
+            const subTitle = comp.subcomponents.length === 0 
+                ? "Component Only" 
+                : comp.subcomponents.map(s => s.name).join(", ");
+            html += `<th title="${escapeHtml(comp.name)} - Features: ${escapeHtml(subTitle)}">📦 ${escapeHtml(comp.name)}<br><span style="font-weight: normal; font-size: 11px; color: var(--text-muted);">${escapeHtml(subTitle)}</span></th>`;
         });
         html += '</tr></thead><tbody>';
 
         // Table body rows
         comps.forEach((rowComp, i) => {
-            const tooltip = rowComp.subcomponents.length === 0 
-                ? "No subcomponents/features (Component Only)" 
-                : "Features:\n" + rowComp.subcomponents.map(s => "• " + s.name).join("\n");
-            html += `<tr><td title="${escapeHtml(tooltip)}"><strong>📦 ${escapeHtml(rowComp.name)}</strong></td>`;
+            const subTitle = rowComp.subcomponents.length === 0 
+                ? "Component Only" 
+                : rowComp.subcomponents.map(s => s.name).join(", ");
+            html += `<tr><td><strong>📦 ${escapeHtml(rowComp.name)}</strong><br><span style="font-weight: normal; font-size: 11px; color: var(--text-muted);">${escapeHtml(subTitle)}</span></td>`;
             
             comps.forEach((colComp, j) => {
                 if (i === j) {
                     html += '<td class="diagonal" title="Self Interaction Blocked"></td>';
                 } else {
                     const key = rowComp.id + '-' + colComp.id;
-                    const isInteracting = structureData.componentInteractions[key] || false;
+                    const cellData = structureData.matrix[key] || { p: false, e: false, i: false, m: false };
                     
                     html += `
                     <td>
-                        <button class="peim-btn ${isInteracting ? 'active' : ''}" 
-                                data-type="I" 
-                                onclick="toggleComponentInteraction('${rowComp.id}', '${colComp.id}')" 
-                                style="width: 100%; height: 32px; font-size: 12px; margin: 0 auto; ${isInteracting ? 'background-color: #10b981; border-color: #059669; color: white;' : ''}"
-                                title="Toggle Interaction between ${escapeHtml(rowComp.name)} and ${escapeHtml(colComp.name)}">
-                            ${isInteracting ? '✓ Yes' : '—'}
-                        </button>
+                        <div class="peim-cell-container">
+                            <div class="peim-row">
+                                <button class="peim-btn ${cellData.p ? 'active' : ''}" data-type="P" onclick="toggleComponentPeim('${rowComp.id}', '${colComp.id}', 'P')" title="Physical Exchange">P</button>
+                                <button class="peim-btn ${cellData.e ? 'active' : ''}" data-type="E" onclick="toggleComponentPeim('${rowComp.id}', '${colComp.id}', 'E')" title="Energy Exchange">E</button>
+                            </div>
+                            <div class="peim-row">
+                                <button class="peim-btn ${cellData.i ? 'active' : ''}" data-type="I" onclick="toggleComponentPeim('${rowComp.id}', '${colComp.id}', 'I')" title="Information Exchange">I</button>
+                                <button class="peim-btn ${cellData.m ? 'active' : ''}" data-type="M" onclick="toggleComponentPeim('${rowComp.id}', '${colComp.id}', 'M')" title="Material Exchange">M</button>
+                            </div>
+                        </div>
                     </td>
                     `;
-                }
-            });
-            
-            html += '</tr>';
-        });
-
-        html += '</tbody></table>';
-        container.innerHTML = html;
-    }
-
-    function renderInterfaceMatrix() {
-        const container = document.getElementById('interfaceMatrixContainer');
-        
-        // Flatten all components and their subcomponents
-        const allFeatures = [];
-        structureData.components.forEach(c => {
-            // First, always add the parent component itself
-            allFeatures.push({
-                id: c.id,
-                name: c.name,
-                compId: c.id,
-                compName: c.name,
-                isComponentOnly: true
-            });
-            // Then, add its subcomponents/features (if any)
-            c.subcomponents.forEach(s => {
-                allFeatures.push({
-                    id: s.id,
-                    name: s.name,
-                    compId: c.id,
-                    compName: c.name,
-                    isComponentOnly: false
-                });
-            });
-        });
-
-        if (allFeatures.length < 2) {
-            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px;">Add at least two elements in the Structure Tree to view the Interface Matrix.</div>`;
-            return;
-        }
-
-        let html = '<table>';
-        
-        // Header row
-        html += '<thead><tr><th>Subcomponent / Feature</th>';
-        allFeatures.forEach(feat => {
-            const displayName = feat.isComponentOnly ? `📦 ${escapeHtml(feat.name)}` : `${escapeHtml(feat.compName)}<br><span style="font-weight: normal; font-size: 11px; color: var(--text-muted);">${escapeHtml(feat.name)}</span>`;
-            html += `<th title="${escapeHtml(feat.compName)} - ${escapeHtml(feat.name)}">${displayName}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-
-        // Table body rows
-        allFeatures.forEach((rowFeat, i) => {
-            const displayRowName = rowFeat.isComponentOnly ? `<strong>📦 ${escapeHtml(rowFeat.name)}</strong>` : `<strong>${escapeHtml(rowFeat.compName)} - ${escapeHtml(rowFeat.name)}</strong>`;
-            html += `<tr><td>${displayRowName}</td>`;
-            
-            allFeatures.forEach((colFeat, j) => {
-                if (i === j) {
-                    html += '<td class="diagonal" title="Self Interaction Blocked"></td>';
-                } else if (rowFeat.compId === colFeat.compId) {
-                    html += '<td class="diagonal" title="Same Component Blocked"></td>';
-                } else {
-                    // Check if parent components interact
-                    const compKey = rowFeat.compId + '-' + colFeat.compId;
-                    const isComponentInteracting = structureData.componentInteractions && structureData.componentInteractions[compKey];
-                    
-                    if (!isComponentInteracting) {
-                        html += '<td style="background-color: rgba(255, 255, 255, 0.05); color: var(--text-muted); font-size: 10px; cursor: not-allowed;" title="Blocked: No Component-Level Interaction Defined">🚫 Blocked</td>';
-                    } else {
-                        const key = rowFeat.id + '-' + colFeat.id;
-                        const cellData = structureData.matrix[key] || { p: false, e: false, i: false, m: false };
-                        
-                        html += `
-                        <td>
-                            <div class="peim-cell-container">
-                                <div class="peim-row">
-                                    <button class="peim-btn ${cellData.p ? 'active' : ''}" data-type="P" onclick="togglePeim('${rowFeat.id}', '${colFeat.id}', 'P')" title="Physical Exchange">P</button>
-                                    <button class="peim-btn ${cellData.e ? 'active' : ''}" data-type="E" onclick="togglePeim('${rowFeat.id}', '${colFeat.id}', 'E')" title="Energy Exchange">E</button>
-                                </div>
-                                <div class="peim-row">
-                                    <button class="peim-btn ${cellData.i ? 'active' : ''}" data-type="I" onclick="togglePeim('${rowFeat.id}', '${colFeat.id}', 'I')" title="Information Exchange">I</button>
-                                    <button class="peim-btn ${cellData.m ? 'active' : ''}" data-type="M" onclick="togglePeim('${rowFeat.id}', '${colFeat.id}', 'M')" title="Material Exchange">M</button>
-                                </div>
-                            </div>
-                        </td>
-                        `;
-                    }
                 }
             });
             
@@ -1433,7 +1270,6 @@ this.pdfMake = this.pdfMake || {}; this.pdfMake.vfs = {
         // Initial Step 2 render
         renderStructureTree();
         renderComponentInteractions();
-        renderInterfaceMatrix();
     });
 </script>
 </body>
